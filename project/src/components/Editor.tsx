@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Settings } from 'lucide-react';
+import { Save, Settings, LogIn } from 'lucide-react';
 import { saveSection } from '../services/api';
 import {
   HeroEditor,
@@ -14,12 +14,16 @@ import {
 } from './EditorSections';
 
 interface EditorProps {
-  userId: string;
+  userId: string | null;
   sectionData: any;
   onSectionChange: (section: string, data: any) => void;
+  isAuthenticated: boolean;
+  isAuthenticating: boolean;
 }
 
-export default function Editor({ userId, sectionData, onSectionChange }: EditorProps) {
+const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
+
+export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -42,6 +46,10 @@ export default function Editor({ userId, sectionData, onSectionChange }: EditorP
   ];
 
   const handleSave = async () => {
+    if (!userId) {
+      alert('保存するにはログインが必要です');
+      return;
+    }
     setIsSaving(true);
     const success = await saveSection(userId, activeSection, sectionData[activeSection]);
     setIsSaving(false);
@@ -51,9 +59,7 @@ export default function Editor({ userId, sectionData, onSectionChange }: EditorP
   };
 
   const handleSettingsSave = () => {
-    const apiEndpoint = (document.getElementById('api_endpoint') as HTMLInputElement).value;
     const s3Endpoint = (document.getElementById('s3_endpoint') as HTMLInputElement).value;
-    localStorage.setItem('api_gateway_endpoint', apiEndpoint);
     localStorage.setItem('s3_upload_endpoint', s3Endpoint);
     alert('設定を保存しました');
     setShowSettings(false);
@@ -106,37 +112,46 @@ export default function Editor({ userId, sectionData, onSectionChange }: EditorP
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold">エディター</h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2"
-          >
-            <Settings size={16} />
-            設定
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            <Save size={16} />
-            {isSaving ? '保存中...' : '保存'}
-          </button>
+          {!isAuthenticated && !isAuthenticating && (
+            <a
+              href={LOGIN_URL}
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 text-sm font-medium"
+            >
+              <LogIn size={16} />
+              ログイン
+            </a>
+          )}
+          {isAuthenticating && (
+            <div className="px-4 py-2 text-sm text-gray-500 flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
+              認証中...
+            </div>
+          )}
+          {isAuthenticated && (
+            <>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2"
+              >
+                <Settings size={16} />
+                設定
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Save size={16} />
+                {isSaving ? '保存中...' : '保存'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {showSettings && (
         <div className="p-4 bg-yellow-50 border-b border-yellow-200 space-y-3">
-          <h3 className="font-medium text-sm">API設定</h3>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">API Gateway エンドポイント</label>
-            <input
-              id="api_endpoint"
-              type="text"
-              defaultValue={localStorage.getItem('api_gateway_endpoint') || ''}
-              placeholder="https://your-api-gateway.amazonaws.com/prod"
-              className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-            />
-          </div>
+          <h3 className="font-medium text-sm">S3設定</h3>
           <div>
             <label className="block text-xs font-medium text-gray-700">S3 アップロード エンドポイント</label>
             <input

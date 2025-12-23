@@ -18,7 +18,7 @@ export interface SiteData {
   footer: any;
 }
 
-const API_ENDPOINT = localStorage.getItem('api_gateway_endpoint') || '';
+const API_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/save-content';
 
 export async function fetchSiteData(userId: string): Promise<SiteData | null> {
   try {
@@ -74,27 +74,32 @@ export async function saveSiteData(userId: string, data: Partial<SiteData>): Pro
 
 export async function saveSection(userId: string, section: string, data: any): Promise<boolean> {
   try {
-    if (!API_ENDPOINT) {
-      alert('API Gatewayエンドポイントが設定されていません。設定から登録してください。');
-      return false;
-    }
+    const payload = {
+      storeId: userId,
+      section: section,
+      content: data,
+    };
 
-    const response = await fetch(`${API_ENDPOINT}/sites/${userId}/sections/${section}`, {
+    const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
       throw new Error('Failed to save section data');
     }
 
+    const result = await response.json();
+    console.log('Save successful:', result);
     return true;
   } catch (error) {
     console.error('Error saving section data:', error);
-    alert('データの保存に失敗しました');
+    alert('データの保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
     return false;
   }
 }

@@ -5,6 +5,13 @@ import Preview from './components/Preview';
 import Editor from './components/Editor';
 import { fetchSiteData } from './services/api';
 import {
+  exchangeCodeForTokens,
+  getStoreIdFromToken,
+  getCodeFromUrl,
+  storeAuthData,
+  getStoredStoreId,
+} from './services/auth';
+import {
   headerData,
   heroData,
   aboutData,
@@ -24,8 +31,9 @@ import {
 } from './data/content';
 
 function App() {
-  const [userId] = useState('testuser');
+  const [userId, setUserId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [sectionData, setSectionData] = useState({
     header: headerData,
     hero: heroData,
@@ -46,6 +54,40 @@ function App() {
   });
 
   useEffect(() => {
+    const handleAuth = async () => {
+      const code = getCodeFromUrl();
+
+      if (code) {
+        try {
+          const tokens = await exchangeCodeForTokens(code);
+          const storeId = getStoreIdFromToken(tokens.id_token);
+
+          if (storeId) {
+            storeAuthData(tokens, storeId);
+            setUserId(storeId);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            console.error('store_id not found in token');
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+        }
+      } else {
+        const storedStoreId = getStoredStoreId();
+        if (storedStoreId) {
+          setUserId(storedStoreId);
+        }
+      }
+
+      setIsAuthenticating(false);
+    };
+
+    handleAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
     const loadData = async () => {
       const data = await fetchSiteData(userId);
       if (data) {
@@ -111,6 +153,8 @@ function App() {
             userId={userId}
             sectionData={sectionData}
             onSectionChange={handleSectionChange}
+            isAuthenticated={!!userId}
+            isAuthenticating={isAuthenticating}
           />
         </div>
       </div>

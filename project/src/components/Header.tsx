@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Waves, Menu, X } from 'lucide-react';
+import { Waves, Menu, X, LogIn } from 'lucide-react';
 import { headerData } from '../data/content';
+
+const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -65,6 +67,19 @@ export default function Header() {
                   {item.label}
                 </motion.button>
               ))}
+              <motion.a
+                href={LOGIN_URL}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  scrolled
+                    ? 'bg-teal-600 text-white hover:bg-teal-700'
+                    : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <LogIn className="w-4 h-4" />
+                ログイン
+              </motion.a>
             </nav>
 
             <motion.button
@@ -109,6 +124,17 @@ export default function Header() {
                     {item.label}
                   </motion.button>
                 ))}
+                <motion.a
+                  href={LOGIN_URL}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <LogIn className="w-5 h-5" />
+                  ログイン
+                </motion.a>
               </div>
             </motion.nav>
           </>
