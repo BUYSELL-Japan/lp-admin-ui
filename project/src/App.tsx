@@ -3,7 +3,6 @@ import { Eye, Edit } from 'lucide-react';
 import Header from './components/Header';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
-import { fetchSiteData } from './services/api';
 import {
   exchangeCodeForTokens,
   getStoreIdFromToken,
@@ -84,35 +83,6 @@ function App() {
 
     handleAuth();
   }, []);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const loadData = async () => {
-      const data = await fetchSiteData(userId);
-      if (data) {
-        setSectionData({
-          header: data.header || headerData,
-          hero: data.hero || heroData,
-          about: data.about || aboutData,
-          menu: data.menu || menuData,
-          pricing: data.pricing || pricingData,
-          cta: data.cta || ctaData,
-          gallery: data.gallery || galleryData,
-          staff: data.staff || staffData,
-          reviews: data.reviews || reviewsData,
-          news: data.news || newsData,
-          storeInfo: data.storeInfo || storeInfoData,
-          company: data.company || companyData,
-          access: data.access || accessData,
-          faq: data.faq || faqData,
-          contact: data.contact || contactData,
-          footer: data.footer || footerData,
-        });
-      }
-    };
-    loadData();
-  }, [userId]);
 
   const handleSectionChange = (section: string, data: any) => {
     setSectionData((prev) => ({
