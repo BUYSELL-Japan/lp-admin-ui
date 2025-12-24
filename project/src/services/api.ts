@@ -20,31 +20,6 @@ export interface SiteData {
 
 const API_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/save-content';
 
-export async function fetchSiteData(userId: string): Promise<SiteData | null> {
-  try {
-    if (!API_ENDPOINT) {
-      console.warn('API Gateway endpoint not configured');
-      return null;
-    }
-
-    const response = await fetch(`${API_ENDPOINT}/sites/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch site data');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching site data:', error);
-    return null;
-  }
-}
-
 export async function saveSiteData(userId: string, data: Partial<SiteData>): Promise<boolean> {
   try {
     if (!API_ENDPOINT) {
