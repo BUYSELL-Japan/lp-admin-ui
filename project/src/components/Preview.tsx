@@ -20,7 +20,7 @@ interface PreviewProps {
 export default function Preview({ sectionData }: PreviewProps) {
   return (
     <div className="h-screen overflow-y-auto bg-white relative">
-      <div className="sticky top-0 z-10 bg-gray-800 text-white px-4 py-2 text-sm">
+      <div className="sticky top-0 z-0 bg-gray-800 text-white px-4 py-2 text-sm">
         プレビュー
       </div>
       <div>
