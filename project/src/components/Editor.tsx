@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Settings, LogIn } from 'lucide-react';
 import { saveSection } from '../services/api';
 import {
@@ -27,6 +27,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
   const sections = [
     { id: 'hero', label: 'ヒーロー' },
@@ -44,6 +45,14 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     { id: 'faq', label: 'よくある質問' },
     { id: 'contact', label: 'お問い合わせ' },
   ];
+
+  useEffect(() => {
+    if (isAuthenticated && !isAuthenticating) {
+      setShowLoginSuccess(true);
+      const timer = setTimeout(() => setShowLoginSuccess(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isAuthenticating]);
 
   const handleSave = async () => {
     if (!userId) {
@@ -109,6 +118,11 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
   return (
     <div className="h-screen flex flex-col bg-white border-l border-gray-200">
+      {showLoginSuccess && (
+        <div className="bg-green-50 border-b border-green-200 px-4 py-3 text-green-800 text-sm">
+          ✓ ログインに成功しました！編集内容を保存できます。
+        </div>
+      )}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold">エディター</h2>
         <div className="flex gap-2">

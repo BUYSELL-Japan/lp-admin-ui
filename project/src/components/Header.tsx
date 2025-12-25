@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Waves, Menu, X, LogIn } from 'lucide-react';
+import { Waves, Menu, X, LogIn, LogOut, User } from 'lucide-react';
 import { headerData } from '../data/content';
+import { clearAuthData, getUserEmail } from '../services/auth';
 
 const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
-export default function Header() {
+interface HeaderProps {
+  isAuthenticated?: boolean;
+}
+
+export default function Header({ isAuthenticated = false }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const userEmail = getUserEmail();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +29,11 @@ export default function Header() {
       element.scrollIntoView({ behavior: 'smooth' });
       setMobileMenuOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+    clearAuthData();
+    window.location.reload();
   };
 
   return (
@@ -67,22 +78,48 @@ export default function Header() {
                   {item.label}
                 </motion.button>
               ))}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <a
-                  href={LOGIN_URL}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+              {isAuthenticated ? (
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
                     scrolled
-                      ? 'bg-teal-600 text-white hover:bg-teal-700'
-                      : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
-                  }`}
+                      ? 'text-gray-700'
+                      : 'text-white'
+                  }`}>
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">{userEmail}</span>
+                  </div>
+                  <motion.button
+                    onClick={handleLogout}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                      scrolled
+                        ? 'bg-gray-600 text-white hover:bg-gray-700'
+                        : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    ログアウト
+                  </motion.button>
+                </div>
+              ) : (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <LogIn className="w-4 h-4" />
-                  ログイン
-                </a>
-              </motion.div>
+                  <a
+                    href={LOGIN_URL}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                      scrolled
+                        ? 'bg-teal-600 text-white hover:bg-teal-700'
+                        : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+                    }`}
+                  >
+                    <LogIn className="w-4 h-4" />
+                    ログイン
+                  </a>
+                </motion.div>
+              )}
             </nav>
 
             <motion.button
@@ -127,17 +164,42 @@ export default function Header() {
                     {item.label}
                   </motion.button>
                 ))}
-                <motion.a
-                  href={LOGIN_URL}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <LogIn className="w-5 h-5" />
-                  ログイン
-                </motion.a>
+                {isAuthenticated ? (
+                  <>
+                    <motion.div
+                      className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-gray-100 text-gray-900 rounded-xl"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="text-sm font-medium">{userEmail}</span>
+                    </motion.div>
+                    <motion.button
+                      onClick={handleLogout}
+                      className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-2 bg-gray-600 text-white rounded-xl font-medium hover:bg-gray-700 transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: (headerData.navigation.length + 1) * 0.05 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <LogOut className="w-5 h-5" />
+                      ログアウト
+                    </motion.button>
+                  </>
+                ) : (
+                  <motion.a
+                    href={LOGIN_URL}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <LogIn className="w-5 h-5" />
+                    ログイン
+                  </motion.a>
+                )}
               </div>
             </motion.nav>
           </>

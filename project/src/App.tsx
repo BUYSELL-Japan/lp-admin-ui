@@ -113,7 +113,7 @@ function App() {
 
       <div className="flex h-screen">
         <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
-          <Preview sectionData={sectionData} />
+          <Preview sectionData={sectionData} isAuthenticated={!!userId} />
         </div>
         <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block`}>
           <Editor

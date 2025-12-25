@@ -100,3 +100,16 @@ export function clearAuthData() {
 export function isAuthenticated(): boolean {
   return !!localStorage.getItem('id_token');
 }
+
+export function getUserEmail(): string | null {
+  const idToken = localStorage.getItem('id_token');
+  if (!idToken) return null;
+
+  try {
+    const decoded = decodeJWT(idToken);
+    return decoded.email || null;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+}
