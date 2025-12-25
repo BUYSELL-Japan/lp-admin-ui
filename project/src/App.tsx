@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Eye, Edit } from 'lucide-react';
-import Header from './components/Header';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
 import {
@@ -93,8 +92,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
-
       <div className="md:hidden fixed bottom-4 right-4 z-50">
         <button
           onClick={() => setShowPreview(!showPreview)}
@@ -114,7 +111,7 @@ function App() {
         </button>
       </div>
 
-      <div className="flex" style={{ height: 'calc(100vh - 64px)' }}>
+      <div className="flex h-screen">
         <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
           <Preview sectionData={sectionData} />
         </div>

@@ -1,3 +1,4 @@
+import Header from './Header';
 import Hero from './Hero';
 import About from './About';
 import Menu from './Menu';
@@ -20,10 +21,11 @@ interface PreviewProps {
 export default function Preview({ sectionData }: PreviewProps) {
   return (
     <div className="h-screen overflow-y-auto bg-white relative">
-      <div className="sticky top-0 z-0 bg-gray-800 text-white px-4 py-2 text-sm">
+      <div className="sticky top-0 z-50 bg-gray-800 text-white px-4 py-2 text-sm">
         プレビュー
       </div>
-      <div>
+      <div className="relative">
+        <Header />
         <Hero />
         <About />
         <Menu />

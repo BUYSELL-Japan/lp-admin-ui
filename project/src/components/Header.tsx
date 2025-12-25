@@ -67,19 +67,22 @@ export default function Header() {
                   {item.label}
                 </motion.button>
               ))}
-              <motion.a
-                href={LOGIN_URL}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  scrolled
-                    ? 'bg-teal-600 text-white hover:bg-teal-700'
-                    : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
-                }`}
+              <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <LogIn className="w-4 h-4" />
-                ログイン
-              </motion.a>
+                <a
+                  href={LOGIN_URL}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    scrolled
+                      ? 'bg-teal-600 text-white hover:bg-teal-700'
+                      : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
+                  }`}
+                >
+                  <LogIn className="w-4 h-4" />
+                  ログイン
+                </a>
+              </motion.div>
             </nav>
 
             <motion.button
