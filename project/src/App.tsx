@@ -65,7 +65,7 @@ function App() {
             setUserId(storeId);
             window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            console.error('store_id not found in token');
+            console.error('Unable to get user ID from token');
           }
         } catch (error) {
           console.error('Authentication error:', error);
