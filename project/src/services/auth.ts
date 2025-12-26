@@ -67,6 +67,12 @@ export async function exchangeCodeForTokens(code: string): Promise<TokenResponse
 export function getStoreIdFromToken(idToken: string): string | null {
   try {
     const decoded = decodeJWT(idToken);
+    console.log('=== DEBUG: Token Decoded ===');
+    console.log('Full decoded token:', decoded);
+    console.log('Keys in token:', Object.keys(decoded));
+    console.log('custom:store_id value:', decoded['custom:store_id']);
+    console.log('==========================');
+
     // Only return store_id, no fallback
     return decoded['custom:store_id'] || null;
   } catch (error) {

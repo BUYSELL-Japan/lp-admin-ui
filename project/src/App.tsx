@@ -55,16 +55,25 @@ function App() {
   useEffect(() => {
     const handleAuth = async () => {
       const code = getCodeFromUrl();
+      console.log('=== DEBUG: Auth Started ===');
+      console.log('Code from URL:', code);
+      console.log('Current URL:', window.location.href);
+      console.log('Stored store_id:', getStoredStoreId());
+      console.log('Stored id_token exists:', !!localStorage.getItem('id_token'));
+      console.log('==========================');
 
       if (code) {
+        console.log('DEBUG: Code detected, removing from URL');
         window.history.replaceState({}, document.title, window.location.pathname);
 
         const storedStoreId = getStoredStoreId();
         if (storedStoreId) {
+          console.log('DEBUG: Existing store_id found, checking validity');
           const idToken = localStorage.getItem('id_token');
           if (idToken) {
             const validStoreId = getStoreIdFromToken(idToken);
             if (validStoreId === storedStoreId) {
+              console.log('DEBUG: Existing auth valid, using stored credentials');
               setUserId(storedStoreId);
               setIsAuthenticating(false);
               return;
@@ -72,13 +81,16 @@ function App() {
           }
         }
 
+        console.log('DEBUG: Clearing auth and exchanging code for tokens');
         clearAuthData();
 
         try {
           const tokens = await exchangeCodeForTokens(code);
+          console.log('DEBUG: Token exchange successful');
           const storeId = getStoreIdFromToken(tokens.id_token);
 
           if (storeId) {
+            console.log('DEBUG: Store ID found:', storeId);
             storeAuthData(tokens, storeId);
             setUserId(storeId);
           } else {
@@ -90,12 +102,14 @@ function App() {
           clearAuthData();
         }
       } else {
+        console.log('DEBUG: No code in URL, checking stored auth');
         const storedStoreId = getStoredStoreId();
         if (storedStoreId) {
           const idToken = localStorage.getItem('id_token');
           if (idToken) {
             const validStoreId = getStoreIdFromToken(idToken);
             if (validStoreId === storedStoreId) {
+              console.log('DEBUG: Using stored auth, store_id:', storedStoreId);
               setUserId(storedStoreId);
             } else {
               console.error('Stored token is invalid, clearing auth data');
