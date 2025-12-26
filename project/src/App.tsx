@@ -8,6 +8,7 @@ import {
   getCodeFromUrl,
   storeAuthData,
   getStoredStoreId,
+  clearAuthData,
 } from './services/auth';
 import {
   headerData,
@@ -65,15 +66,28 @@ function App() {
             setUserId(storeId);
             window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            console.error('Unable to get user ID from token');
+            console.error('Unable to get store_id from token');
+            clearAuthData();
           }
         } catch (error) {
           console.error('Authentication error:', error);
+          clearAuthData();
         }
       } else {
         const storedStoreId = getStoredStoreId();
         if (storedStoreId) {
-          setUserId(storedStoreId);
+          const idToken = localStorage.getItem('id_token');
+          if (idToken) {
+            const validStoreId = getStoreIdFromToken(idToken);
+            if (validStoreId === storedStoreId) {
+              setUserId(storedStoreId);
+            } else {
+              console.error('Stored token is invalid, clearing auth data');
+              clearAuthData();
+            }
+          } else {
+            clearAuthData();
+          }
         }
       }
 
