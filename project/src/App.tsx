@@ -54,14 +54,11 @@ function App() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      if (!sessionStorage.getItem('auth_cleared')) {
-        clearAuthData();
-        sessionStorage.setItem('auth_cleared', 'true');
-      }
-
       const code = getCodeFromUrl();
 
       if (code) {
+        clearAuthData();
+
         try {
           const tokens = await exchangeCodeForTokens(code);
           const storeId = getStoreIdFromToken(tokens.id_token);
