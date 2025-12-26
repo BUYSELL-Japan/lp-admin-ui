@@ -57,6 +57,21 @@ function App() {
       const code = getCodeFromUrl();
 
       if (code) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        const storedStoreId = getStoredStoreId();
+        if (storedStoreId) {
+          const idToken = localStorage.getItem('id_token');
+          if (idToken) {
+            const validStoreId = getStoreIdFromToken(idToken);
+            if (validStoreId === storedStoreId) {
+              setUserId(storedStoreId);
+              setIsAuthenticating(false);
+              return;
+            }
+          }
+        }
+
         clearAuthData();
 
         try {
@@ -66,7 +81,6 @@ function App() {
           if (storeId) {
             storeAuthData(tokens, storeId);
             setUserId(storeId);
-            window.history.replaceState({}, document.title, window.location.pathname);
           } else {
             console.error('Unable to get store_id from token');
             clearAuthData();
