@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, LogIn } from 'lucide-react';
-import { saveSection } from '../services/api';
+import { saveAllSections } from '../services/api';
 import {
   HeroEditor,
   AboutEditor,
@@ -60,10 +60,10 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       return;
     }
     setIsSaving(true);
-    const success = await saveSection(userId, activeSection, sectionData[activeSection]);
+    const success = await saveAllSections(userId, sectionData);
     setIsSaving(false);
     if (success) {
-      alert('保存しました');
+      alert('すべてのセクションを保存しました');
     }
   };
 

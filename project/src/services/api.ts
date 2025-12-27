@@ -78,3 +78,35 @@ export async function saveSection(userId: string, section: string, data: any): P
     return false;
   }
 }
+
+export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
+  try {
+    const payload = {
+      storeId: userId,
+      section: 'all',
+      content: allSectionData,
+    };
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error('Failed to save all sections data');
+    }
+
+    const result = await response.json();
+    console.log('Save all sections successful:', result);
+    return true;
+  } catch (error) {
+    console.error('Error saving all sections data:', error);
+    alert('データの保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    return false;
+  }
+}
