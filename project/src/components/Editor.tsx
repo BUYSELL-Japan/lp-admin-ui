@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, LogIn } from 'lucide-react';
-import { saveAllSections } from '../services/api';
+import { saveAllSections, getSubdomain } from '../services/api';
 import {
   HeroEditor,
   AboutEditor,
@@ -19,11 +19,12 @@ interface EditorProps {
   onSectionChange: (section: string, data: any) => void;
   isAuthenticated: boolean;
   isAuthenticating: boolean;
+  onSubdomainFetched?: (subdomain: string | null) => void;
 }
 
 const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
-export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating }: EditorProps) {
+export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -64,6 +65,10 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     setIsSaving(false);
     if (success) {
       alert('すべてのセクションを保存しました');
+      const subdomain = await getSubdomain(userId);
+      if (subdomain && onSubdomainFetched) {
+        onSubdomainFetched(subdomain);
+      }
     }
   };
 

@@ -19,6 +19,7 @@ export interface SiteData {
 }
 
 const API_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/save-content';
+const SETTINGS_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/settings';
 
 export async function saveSiteData(userId: string, data: Partial<SiteData>): Promise<boolean> {
   try {
@@ -108,5 +109,28 @@ export async function saveAllSections(userId: string, allSectionData: any): Prom
     console.error('Error saving all sections data:', error);
     alert('データの保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
     return false;
+  }
+}
+
+export async function getSubdomain(storeId: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${SETTINGS_ENDPOINT}/${storeId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error('Failed to fetch subdomain');
+    }
+
+    const result = await response.json();
+    return result.subdomain || null;
+  } catch (error) {
+    console.error('Error fetching subdomain:', error);
+    return null;
   }
 }

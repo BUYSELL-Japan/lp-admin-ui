@@ -10,6 +10,7 @@ import {
   getStoredStoreId,
   clearAuthData,
 } from './services/auth';
+import { getSubdomain } from './services/api';
 import {
   headerData,
   heroData,
@@ -33,6 +34,7 @@ function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [subdomain, setSubdomain] = useState<string | null>(null);
   const [sectionData, setSectionData] = useState({
     header: headerData,
     hero: heroData,
@@ -134,11 +136,23 @@ function App() {
     }));
   };
 
+  const handleSubdomainFetched = (fetchedSubdomain: string | null) => {
+    setSubdomain(fetchedSubdomain);
+  };
+
+  const handlePreviewToggle = async () => {
+    if (!showPreview && userId && !subdomain) {
+      const fetchedSubdomain = await getSubdomain(userId);
+      setSubdomain(fetchedSubdomain);
+    }
+    setShowPreview(!showPreview);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="md:hidden fixed bottom-4 right-4 z-50">
         <button
-          onClick={() => setShowPreview(!showPreview)}
+          onClick={handlePreviewToggle}
           className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center gap-2"
         >
           {showPreview ? (
@@ -157,7 +171,7 @@ function App() {
 
       <div className="flex h-screen">
         <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
-          <Preview sectionData={sectionData} isAuthenticated={!!userId} />
+          <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
         </div>
         <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block`}>
           <Editor
@@ -166,6 +180,7 @@ function App() {
             onSectionChange={handleSectionChange}
             isAuthenticated={!!userId}
             isAuthenticating={isAuthenticating}
+            onSubdomainFetched={handleSubdomainFetched}
           />
         </div>
       </div>
