@@ -128,7 +128,10 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
     }
 
     const result = await response.json();
-    return result.subdomain || null;
+    console.log('Subdomain API Response:', result);
+    console.log('Subdomain value:', result.subdomain);
+
+    return result.subdomain || result.Subdomain || null;
   } catch (error) {
     console.error('Error fetching subdomain:', error);
     return null;
