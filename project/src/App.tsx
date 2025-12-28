@@ -10,7 +10,7 @@ import {
   getStoredStoreId,
   clearAuthData,
 } from './services/auth';
-import { getSubdomain } from './services/api';
+import { getSubdomain, getSectionData } from './services/api';
 import {
   headerData,
   heroData,
@@ -128,6 +128,26 @@ function App() {
 
     handleAuth();
   }, []);
+
+  useEffect(() => {
+    const loadSectionData = async () => {
+      if (userId) {
+        console.log('Loading section data for user:', userId);
+        const savedData = await getSectionData(userId);
+        if (savedData) {
+          console.log('Merging saved data with default data');
+          setSectionData((prev) => ({
+            ...prev,
+            ...savedData,
+          }));
+        } else {
+          console.log('No saved data found, using default data');
+        }
+      }
+    };
+
+    loadSectionData();
+  }, [userId]);
 
   const handleSectionChange = (section: string, data: any) => {
     setSectionData((prev) => ({

@@ -20,6 +20,7 @@ export interface SiteData {
 
 const API_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/save-content';
 const SETTINGS_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/settings';
+const CONTENT_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/get-content';
 
 export async function saveSiteData(userId: string, data: Partial<SiteData>): Promise<boolean> {
   try {
@@ -134,6 +135,34 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
     return result.subdomain || result.Subdomain || null;
   } catch (error) {
     console.error('Error fetching subdomain:', error);
+    return null;
+  }
+}
+
+export async function getSectionData(storeId: string): Promise<any | null> {
+  try {
+    const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log('No saved data found for store:', storeId);
+        return null;
+      }
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error('Failed to fetch section data');
+    }
+
+    const result = await response.json();
+    console.log('Fetched section data:', result);
+    return result.content || result;
+  } catch (error) {
+    console.error('Error fetching section data:', error);
     return null;
   }
 }
