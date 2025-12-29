@@ -343,11 +343,17 @@ async function translatePricingSection(
 
     for (const lang in planResult) {
       if (!translatedPlans[lang]) {
-        translatedPlans[lang] = JSON.parse(JSON.stringify(planResult[lang]));
-        translatedPlans[lang].plans = [];
+        translatedPlans[lang] = { pricing: { plans: [] } };
+
+        for (const key in planResult[lang].pricing) {
+          if (key !== 'plans') {
+            translatedPlans[lang].pricing[key] = planResult[lang].pricing[key];
+          }
+        }
       }
-      if (planResult[lang].plans && Array.isArray(planResult[lang].plans)) {
-        translatedPlans[lang].plans.push(...planResult[lang].plans);
+
+      if (planResult[lang].pricing?.plans && Array.isArray(planResult[lang].pricing.plans)) {
+        translatedPlans[lang].pricing.plans.push(...planResult[lang].pricing.plans);
       }
     }
 
