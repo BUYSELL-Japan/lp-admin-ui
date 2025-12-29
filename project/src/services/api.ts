@@ -21,6 +21,7 @@ export interface SiteData {
 const API_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/save-content';
 const SETTINGS_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/settings';
 const CONTENT_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/get-content';
+const TRANSLATE_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/translate';
 
 export async function saveSiteData(userId: string, data: Partial<SiteData>): Promise<boolean> {
   try {
@@ -186,5 +187,62 @@ export async function getSectionData(storeId: string): Promise<any | null> {
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
+  }
+}
+
+export async function translateAndSave(userId: string, allSectionData: any): Promise<boolean> {
+  try {
+    const translatePayload = {
+      storeId: userId,
+      section: 'all',
+      content: allSectionData,
+    };
+
+    console.log('Translating content...');
+    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(translatePayload),
+    });
+
+    if (!translateResponse.ok) {
+      const errorText = await translateResponse.text();
+      console.error('Translation API Error:', errorText);
+      throw new Error('Failed to translate content');
+    }
+
+    const translatedData = await translateResponse.json();
+    console.log('Translation successful:', translatedData);
+
+    const savePayload = {
+      storeId: userId,
+      section: 'all',
+      content: translatedData,
+    };
+
+    console.log('Saving translated content...');
+    const saveResponse = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(savePayload),
+    });
+
+    if (!saveResponse.ok) {
+      const errorText = await saveResponse.text();
+      console.error('Save API Error:', errorText);
+      throw new Error('Failed to save translated content');
+    }
+
+    const result = await saveResponse.json();
+    console.log('Save translated content successful:', result);
+    return true;
+  } catch (error) {
+    console.error('Error in translate and save:', error);
+    alert('翻訳または保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    return false;
   }
 }

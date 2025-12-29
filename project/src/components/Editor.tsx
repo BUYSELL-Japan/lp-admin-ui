@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, Settings, LogIn } from 'lucide-react';
-import { saveAllSections, getSubdomain } from '../services/api';
+import { Save, Settings, LogIn, Languages } from 'lucide-react';
+import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
 import {
   HeaderEditor,
   HeroEditor,
@@ -69,6 +69,23 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     setIsSaving(false);
     if (success) {
       alert('すべてのセクションを保存しました');
+      const subdomain = await getSubdomain(userId);
+      if (subdomain && onSubdomainFetched) {
+        onSubdomainFetched(subdomain);
+      }
+    }
+  };
+
+  const handleTranslateAndSave = async () => {
+    if (!userId) {
+      alert('保存するにはログインが必要です');
+      return;
+    }
+    setIsSaving(true);
+    const success = await translateAndSave(userId, sectionData);
+    setIsSaving(false);
+    if (success) {
+      alert('翻訳と保存が完了しました');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
         onSubdomainFetched(subdomain);
@@ -170,6 +187,14 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               >
                 <Save size={16} />
                 {isSaving ? '保存中...' : '保存'}
+              </button>
+              <button
+                onClick={handleTranslateAndSave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Languages size={16} />
+                翻訳し確定
               </button>
             </>
           )}
