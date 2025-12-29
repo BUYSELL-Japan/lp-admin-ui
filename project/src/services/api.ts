@@ -214,7 +214,7 @@ async function translateSection(
 
     if (!translateResponse.ok) {
       if (translateResponse.status === 504 && retryCount < 2) {
-        const waitTime = (retryCount + 1) * 2000;
+        const waitTime = retryCount === 0 ? 5000 : 10000;
         console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateSection(userId, sectionName, sectionContent, retryCount + 1);
@@ -228,7 +228,7 @@ async function translateSection(
     return await translateResponse.json();
   } catch (error) {
     if (retryCount < 2 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
-      const waitTime = (retryCount + 1) * 2000;
+      const waitTime = retryCount === 0 ? 5000 : 10000;
       console.warn(`Network error for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return translateSection(userId, sectionName, sectionContent, retryCount + 1);
