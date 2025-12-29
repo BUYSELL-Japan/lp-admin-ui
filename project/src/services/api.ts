@@ -331,13 +331,23 @@ async function translateSectionInBatches(
   const arrayFields = findArrayFields(sectionContent);
 
   if (arrayFields.length === 0) {
+    console.log(`${sectionName}: No array fields detected, processing as single request`);
     return translateSection(userId, sectionName, sectionContent);
   }
 
+  console.log(`${sectionName}: Detected array fields: ${arrayFields.join(', ')}`);
   const mainArrayField = arrayFields[0];
   const items = getNestedValue(sectionContent, mainArrayField);
 
-  if (!Array.isArray(items) || items.length <= BATCH_SIZE) {
+  if (!Array.isArray(items)) {
+    console.log(`${sectionName}: Field '${mainArrayField}' is not an array, processing as single request`);
+    return translateSection(userId, sectionName, sectionContent);
+  }
+
+  console.log(`${sectionName}: Array '${mainArrayField}' has ${items.length} items`);
+
+  if (items.length <= BATCH_SIZE) {
+    console.log(`${sectionName}: ${items.length} items <= batch size (${BATCH_SIZE}), processing in single request`);
     return translateSection(userId, sectionName, sectionContent);
   }
 
@@ -346,12 +356,12 @@ async function translateSectionInBatches(
     batches.push(items.slice(i, i + BATCH_SIZE));
   }
 
-  console.log(`${sectionName} has ${items.length} items in '${mainArrayField}', splitting into ${batches.length} batches of ${BATCH_SIZE}`);
+  console.log(`${sectionName}: Splitting ${items.length} items into ${batches.length} batches of max ${BATCH_SIZE} items each`);
 
   const translatedBatches: any[] = [];
 
   for (let i = 0; i < batches.length; i++) {
-    console.log(`Translating ${sectionName} batch ${i + 1}/${batches.length} (${batches[i].length} items)`);
+    console.log(`${sectionName}: Translating batch ${i + 1}/${batches.length} (${batches[i].length} items)...`);
 
     const batchContent = JSON.parse(JSON.stringify(sectionContent));
     setNestedValue(batchContent, mainArrayField, batches[i]);
@@ -359,12 +369,15 @@ async function translateSectionInBatches(
     const batchResult = await translateSection(userId, sectionName, batchContent);
     translatedBatches.push(batchResult);
 
+    console.log(`${sectionName}: Batch ${i + 1}/${batches.length} completed`);
+
     if (i < batches.length - 1) {
       console.log(`Waiting ${BATCH_DELAY_MS}ms before next batch...`);
       await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
 
+  console.log(`${sectionName}: Merging ${batches.length} batches...`);
   const mergedResult: any = {};
 
   for (const batchResult of translatedBatches) {
@@ -385,7 +398,7 @@ async function translateSectionInBatches(
     }
   }
 
-  console.log(`${sectionName} batches merged successfully`);
+  console.log(`${sectionName}: All batches merged successfully`);
   return mergedResult;
 }
 
@@ -397,22 +410,17 @@ export async function translateAndSave(
   try {
     const sections = Object.keys(allSectionData);
     const translatedData: any = {};
-    const PARALLEL_LIMIT = 2;
-    const HEAVY_SECTIONS = ['company', 'menu'];
 
-    console.log('Translating content with optimized processing...');
+    console.log('Translating content with full serial processing...');
     console.log('Total sections to translate:', sections.length);
+    console.log('All sections will be processed one by one to avoid API Gateway timeout');
 
     let completedCount = 0;
 
-    const heavySections = sections.filter(s => HEAVY_SECTIONS.includes(s));
-    const lightSections = sections.filter(s => !HEAVY_SECTIONS.includes(s));
+    for (let i = 0; i < sections.length; i++) {
+      const sectionName = sections[i];
+      console.log(`\n[${i + 1}/${sections.length}] Processing section: ${sectionName}`);
 
-    console.log(`Heavy sections (serial): ${heavySections.join(', ')}`);
-    console.log(`Light sections (parallel ${PARALLEL_LIMIT}): ${lightSections.join(', ')}`);
-
-    for (const sectionName of heavySections) {
-      console.log(`\n[SERIAL] Processing heavy section: ${sectionName}`);
       const sectionContent = allSectionData[sectionName];
 
       const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
@@ -423,42 +431,11 @@ export async function translateAndSave(
         onProgress(completedCount, sections.length, sectionName);
       }
 
-      console.log(`✓ Heavy section ${sectionName} translated successfully`);
+      console.log(`✓ Section ${sectionName} completed (${completedCount}/${sections.length})`);
 
-      if (heavySections.indexOf(sectionName) < heavySections.length - 1 || lightSections.length > 0) {
+      if (i < sections.length - 1) {
         console.log('Waiting 2s before next section...');
         await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-
-    for (let i = 0; i < lightSections.length; i += PARALLEL_LIMIT) {
-      const batch = lightSections.slice(i, i + PARALLEL_LIMIT);
-      console.log(`\n[PARALLEL] Processing batch: ${batch.join(', ')}`);
-
-      const batchPromises = batch.map(async (sectionName) => {
-        const sectionContent = allSectionData[sectionName];
-        console.log(`Starting translation for: ${sectionName}`);
-
-        const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
-
-        completedCount++;
-        if (onProgress) {
-          onProgress(completedCount, sections.length, sectionName);
-        }
-
-        console.log(`✓ Section ${sectionName} translated successfully`);
-        return { sectionName, data: sectionTranslatedData };
-      });
-
-      const results = await Promise.all(batchPromises);
-
-      for (const result of results) {
-        Object.assign(translatedData, result.data);
-      }
-
-      if (i + PARALLEL_LIMIT < lightSections.length) {
-        console.log('Waiting 1s before next batch...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
