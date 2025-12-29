@@ -269,8 +269,8 @@ async function translateSectionInBatches(
   sectionName: string,
   sectionContent: any
 ): Promise<any> {
-  const BATCH_SIZE = 2;
-  const BATCH_DELAY_MS = 2500;
+  const BATCH_SIZE = 4;
+  const BATCH_DELAY_MS = 2000;
 
   const arrayFields = findArrayFields(sectionContent);
 
@@ -341,27 +341,46 @@ export async function translateAndSave(
   try {
     const sections = Object.keys(allSectionData);
     const translatedData: any = {};
+    const PARALLEL_LIMIT = 3;
 
-    console.log('Translating content section by section...');
+    console.log('Translating content with parallel processing...');
     console.log('Total sections to translate:', sections.length);
+    console.log(`Processing ${PARALLEL_LIMIT} sections in parallel`);
 
-    for (let i = 0; i < sections.length; i++) {
-      const sectionName = sections[i];
-      const sectionContent = allSectionData[sectionName];
+    let completedCount = 0;
 
-      console.log(`Translating section ${i + 1}/${sections.length}: ${sectionName}`);
+    for (let i = 0; i < sections.length; i += PARALLEL_LIMIT) {
+      const batch = sections.slice(i, i + PARALLEL_LIMIT);
+      console.log(`\nProcessing batch: ${batch.join(', ')}`);
 
-      if (onProgress) {
-        onProgress(i + 1, sections.length, sectionName);
+      const batchPromises = batch.map(async (sectionName) => {
+        const sectionContent = allSectionData[sectionName];
+        console.log(`Starting translation for: ${sectionName}`);
+
+        const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
+
+        completedCount++;
+        if (onProgress) {
+          onProgress(completedCount, sections.length, sectionName);
+        }
+
+        console.log(`✓ Section ${sectionName} translated successfully`);
+        return { sectionName, data: sectionTranslatedData };
+      });
+
+      const results = await Promise.all(batchPromises);
+
+      for (const result of results) {
+        Object.assign(translatedData, result.data);
       }
 
-      const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
-      Object.assign(translatedData, sectionTranslatedData);
-
-      console.log(`Section ${sectionName} translated successfully`);
+      if (i + PARALLEL_LIMIT < sections.length) {
+        console.log('Waiting 1s before next batch...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
 
-    console.log('All sections translated successfully');
+    console.log('\nAll sections translated successfully');
     console.log('Translated sections:', Object.keys(translatedData));
 
     const savePayload = {
