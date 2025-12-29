@@ -192,30 +192,47 @@ export async function getSectionData(storeId: string): Promise<any | null> {
 
 export async function translateAndSave(userId: string, allSectionData: any): Promise<boolean> {
   try {
-    const translatePayload = {
-      storeId: userId,
-      section: 'all',
-      content: allSectionData,
-      targetLanguages: ['en', 'zh', 'ko']
-    };
+    const sections = Object.keys(allSectionData);
+    const translatedData: any = {};
 
-    console.log('Translating content...');
-    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(translatePayload),
-    });
+    console.log('Translating content section by section...');
+    console.log('Total sections to translate:', sections.length);
 
-    if (!translateResponse.ok) {
-      const errorText = await translateResponse.text();
-      console.error('Translation API Error:', errorText);
-      throw new Error('Failed to translate content');
+    for (let i = 0; i < sections.length; i++) {
+      const sectionName = sections[i];
+      const sectionContent = allSectionData[sectionName];
+
+      console.log(`Translating section ${i + 1}/${sections.length}: ${sectionName}`);
+
+      const translatePayload = {
+        storeId: userId,
+        section: sectionName,
+        content: { [sectionName]: sectionContent },
+        targetLanguages: ['en', 'zh', 'ko']
+      };
+
+      const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(translatePayload),
+      });
+
+      if (!translateResponse.ok) {
+        const errorText = await translateResponse.text();
+        console.error(`Translation API Error for ${sectionName}:`, errorText);
+        throw new Error(`Failed to translate section: ${sectionName}`);
+      }
+
+      const sectionTranslatedData = await translateResponse.json();
+      Object.assign(translatedData, sectionTranslatedData);
+
+      console.log(`Section ${sectionName} translated successfully`);
     }
 
-    const translatedData = await translateResponse.json();
-    console.log('Translation successful:', translatedData);
+    console.log('All sections translated successfully');
+    console.log('Translated sections:', Object.keys(translatedData));
 
     const savePayload = {
       storeId: userId,
