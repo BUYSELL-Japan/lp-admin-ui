@@ -160,14 +160,20 @@ export async function getSectionData(storeId: string): Promise<any | null> {
 
     const result = await response.json();
     console.log('=== API Response Debug ===');
-    console.log('Raw result:', JSON.stringify(result, null, 2));
-    console.log('result.content:', result.content);
-    console.log('result.Content:', result.Content);
-    console.log('result type:', typeof result);
-    console.log('result keys:', Object.keys(result));
+    console.log('Raw result keys:', Object.keys(result));
+    console.log('result.ContentData exists:', !!result.ContentData);
     console.log('========================');
 
-    if (result.content) {
+    // DynamoDB returns data in ContentData field
+    if (result.ContentData) {
+      console.log('✓ Returning ContentData from DynamoDB');
+      const contentData = result.ContentData;
+      // Remove Status field as it's not part of section data
+      if (contentData.Status) {
+        delete contentData.Status;
+      }
+      return contentData;
+    } else if (result.content) {
       return result.content;
     } else if (result.Content) {
       return result.Content;
@@ -175,6 +181,7 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return result;
     }
 
+    console.log('⚠ No valid data structure found in response');
     return null;
   } catch (error) {
     console.error('Error fetching section data:', error);
