@@ -316,6 +316,51 @@ async function translateCompanySection(
   return translatedParts;
 }
 
+async function translatePricingSection(
+  userId: string,
+  pricingContent: any
+): Promise<any> {
+  console.log('Translating pricing section with one-by-one plan processing...');
+
+  const plans = pricingContent.plans || [];
+  if (plans.length === 0) {
+    return translateSection(userId, 'pricing', pricingContent);
+  }
+
+  console.log(`Pricing has ${plans.length} plans, will process one by one`);
+
+  const translatedPlans: any = {};
+
+  for (let i = 0; i < plans.length; i++) {
+    console.log(`Translating pricing plan ${i + 1}/${plans.length} (${plans[i].features?.length || 0} features)...`);
+
+    const singlePlanContent = {
+      ...pricingContent,
+      plans: [plans[i]],
+    };
+
+    const planResult = await translateSection(userId, 'pricing', singlePlanContent);
+
+    for (const lang in planResult) {
+      if (!translatedPlans[lang]) {
+        translatedPlans[lang] = JSON.parse(JSON.stringify(planResult[lang]));
+        translatedPlans[lang].plans = [];
+      }
+      if (planResult[lang].plans && Array.isArray(planResult[lang].plans)) {
+        translatedPlans[lang].plans.push(...planResult[lang].plans);
+      }
+    }
+
+    if (i < plans.length - 1) {
+      console.log('Waiting 2s before next pricing plan...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  console.log('Pricing section plans merged successfully');
+  return translatedPlans;
+}
+
 async function translateSectionInBatches(
   userId: string,
   sectionName: string,
@@ -323,6 +368,10 @@ async function translateSectionInBatches(
 ): Promise<any> {
   if (sectionName === 'company') {
     return translateCompanySection(userId, sectionContent);
+  }
+
+  if (sectionName === 'pricing') {
+    return translatePricingSection(userId, sectionContent);
   }
 
   const BATCH_SIZE = 4;
