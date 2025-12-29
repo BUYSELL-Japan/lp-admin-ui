@@ -214,7 +214,7 @@ async function translateSection(
 
     if (!translateResponse.ok) {
       if (translateResponse.status === 504 && retryCount < 2) {
-        const waitTime = retryCount === 0 ? 5000 : 10000;
+        const waitTime = retryCount === 0 ? 12000 : 20000;
         console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateSection(userId, sectionName, sectionContent, retryCount + 1);
@@ -228,7 +228,7 @@ async function translateSection(
     return await translateResponse.json();
   } catch (error) {
     if (retryCount < 2 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
-      const waitTime = retryCount === 0 ? 5000 : 10000;
+      const waitTime = retryCount === 0 ? 12000 : 20000;
       console.warn(`Network error for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return translateSection(userId, sectionName, sectionContent, retryCount + 1);
@@ -264,11 +264,67 @@ function setNestedValue(obj: any, path: string, value: any): void {
   target[lastKey] = value;
 }
 
+async function translateCompanySection(
+  userId: string,
+  companyContent: any
+): Promise<any> {
+  console.log('Translating company section with field-level splitting...');
+
+  const parts: Array<{ name: string; content: any }> = [];
+
+  if (companyContent.philosophy) {
+    parts.push({ name: 'company.philosophy', content: { philosophy: companyContent.philosophy } });
+  }
+
+  if (companyContent.history?.timeline && Array.isArray(companyContent.history.timeline)) {
+    parts.push({ name: 'company.history', content: { history: companyContent.history } });
+  }
+
+  if (companyContent.companyInfo) {
+    parts.push({ name: 'company.companyInfo', content: { companyInfo: companyContent.companyInfo } });
+  }
+
+  if (parts.length === 0) {
+    return translateSection(userId, 'company', companyContent);
+  }
+
+  console.log(`Splitting company into ${parts.length} parts: ${parts.map(p => p.name).join(', ')}`);
+
+  const translatedParts: any = {};
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    console.log(`Translating ${part.name} (${i + 1}/${parts.length})`);
+
+    const partResult = await translateSection(userId, 'company', part.content);
+
+    for (const lang in partResult) {
+      if (!translatedParts[lang]) {
+        translatedParts[lang] = { company: {} };
+      }
+
+      Object.assign(translatedParts[lang].company, partResult[lang].company);
+    }
+
+    if (i < parts.length - 1) {
+      console.log('Waiting 2s before next company part...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  console.log('Company section parts merged successfully');
+  return translatedParts;
+}
+
 async function translateSectionInBatches(
   userId: string,
   sectionName: string,
   sectionContent: any
 ): Promise<any> {
+  if (sectionName === 'company') {
+    return translateCompanySection(userId, sectionContent);
+  }
+
   const BATCH_SIZE = 4;
   const BATCH_DELAY_MS = 2000;
 
@@ -341,17 +397,43 @@ export async function translateAndSave(
   try {
     const sections = Object.keys(allSectionData);
     const translatedData: any = {};
-    const PARALLEL_LIMIT = 3;
+    const PARALLEL_LIMIT = 2;
+    const HEAVY_SECTIONS = ['company', 'menu'];
 
-    console.log('Translating content with parallel processing...');
+    console.log('Translating content with optimized processing...');
     console.log('Total sections to translate:', sections.length);
-    console.log(`Processing ${PARALLEL_LIMIT} sections in parallel`);
 
     let completedCount = 0;
 
-    for (let i = 0; i < sections.length; i += PARALLEL_LIMIT) {
-      const batch = sections.slice(i, i + PARALLEL_LIMIT);
-      console.log(`\nProcessing batch: ${batch.join(', ')}`);
+    const heavySections = sections.filter(s => HEAVY_SECTIONS.includes(s));
+    const lightSections = sections.filter(s => !HEAVY_SECTIONS.includes(s));
+
+    console.log(`Heavy sections (serial): ${heavySections.join(', ')}`);
+    console.log(`Light sections (parallel ${PARALLEL_LIMIT}): ${lightSections.join(', ')}`);
+
+    for (const sectionName of heavySections) {
+      console.log(`\n[SERIAL] Processing heavy section: ${sectionName}`);
+      const sectionContent = allSectionData[sectionName];
+
+      const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
+      Object.assign(translatedData, sectionTranslatedData);
+
+      completedCount++;
+      if (onProgress) {
+        onProgress(completedCount, sections.length, sectionName);
+      }
+
+      console.log(`✓ Heavy section ${sectionName} translated successfully`);
+
+      if (heavySections.indexOf(sectionName) < heavySections.length - 1 || lightSections.length > 0) {
+        console.log('Waiting 2s before next section...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    for (let i = 0; i < lightSections.length; i += PARALLEL_LIMIT) {
+      const batch = lightSections.slice(i, i + PARALLEL_LIMIT);
+      console.log(`\n[PARALLEL] Processing batch: ${batch.join(', ')}`);
 
       const batchPromises = batch.map(async (sectionName) => {
         const sectionContent = allSectionData[sectionName];
@@ -374,7 +456,7 @@ export async function translateAndSave(
         Object.assign(translatedData, result.data);
       }
 
-      if (i + PARALLEL_LIMIT < sections.length) {
+      if (i + PARALLEL_LIMIT < lightSections.length) {
         console.log('Waiting 1s before next batch...');
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
