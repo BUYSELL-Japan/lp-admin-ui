@@ -31,6 +31,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translationProgress, setTranslationProgress] = useState({ current: 0, total: 0, sectionName: '' });
   const [showSettings, setShowSettings] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
@@ -84,7 +85,12 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       return;
     }
     setIsTranslating(true);
-    const success = await translateAndSave(userId, sectionData);
+    setTranslationProgress({ current: 0, total: 0, sectionName: '' });
+
+    const success = await translateAndSave(userId, sectionData, (current, total, sectionName) => {
+      setTranslationProgress({ current, total, sectionName });
+    });
+
     setIsTranslating(false);
     if (success) {
       alert('翻訳と保存が完了しました');
@@ -245,7 +251,13 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         {renderEditor()}
       </div>
 
-      {isTranslating && <TranslationLoadingModal />}
+      {isTranslating && (
+        <TranslationLoadingModal
+          current={translationProgress.current}
+          total={translationProgress.total}
+          sectionName={translationProgress.sectionName}
+        />
+      )}
     </div>
   );
 }

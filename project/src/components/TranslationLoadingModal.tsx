@@ -1,7 +1,15 @@
 import { motion } from 'framer-motion';
 import { Globe, Languages } from 'lucide-react';
 
-export default function TranslationLoadingModal() {
+interface TranslationLoadingModalProps {
+  current?: number;
+  total?: number;
+  sectionName?: string;
+}
+
+export default function TranslationLoadingModal({ current = 0, total = 0, sectionName = '' }: TranslationLoadingModalProps) {
+  const progress = total > 0 ? (current / total) * 100 : 0;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
       <motion.div
@@ -37,7 +45,7 @@ export default function TranslationLoadingModal() {
               }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <Languages size={32} className="text-purple-600" />
+              <Languages size={32} className="text-blue-600" />
             </motion.div>
           </div>
 
@@ -45,15 +53,23 @@ export default function TranslationLoadingModal() {
             翻訳処理中
           </h3>
 
-          <p className="text-gray-600 mb-2">
-            コンテンツを多言語に翻訳しています
-          </p>
+          {total > 0 && (
+            <p className="text-lg font-semibold text-blue-600 mb-2">
+              現在 {current}/{total} セクションを翻訳中
+            </p>
+          )}
+
+          {sectionName && (
+            <p className="text-sm text-gray-600 mb-4">
+              処理中: {sectionName}
+            </p>
+          )}
 
           <p className="text-sm text-amber-600 font-medium mb-6">
             処理には数分かかる場合があります
           </p>
 
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-2 justify-center mb-6">
             <motion.div
               animate={{
                 scale: [1, 1.2, 1],
@@ -76,7 +92,7 @@ export default function TranslationLoadingModal() {
                 repeat: Infinity,
                 delay: 0.2,
               }}
-              className="w-3 h-3 bg-purple-500 rounded-full"
+              className="w-3 h-3 bg-blue-600 rounded-full"
             />
             <motion.div
               animate={{
@@ -88,23 +104,24 @@ export default function TranslationLoadingModal() {
                 repeat: Infinity,
                 delay: 0.4,
               }}
-              className="w-3 h-3 bg-pink-500 rounded-full"
+              className="w-3 h-3 bg-blue-700 rounded-full"
             />
           </div>
 
-          <div className="mt-6 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <motion.div
-              animate={{
-                x: ['-100%', '100%'],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="h-full w-1/3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
             />
           </div>
+
+          {total > 0 && (
+            <p className="text-sm text-gray-600 mt-2">
+              {Math.round(progress)}% 完了
+            </p>
+          )}
 
           <p className="text-xs text-gray-500 mt-4">
             このウィンドウは自動的に閉じます
