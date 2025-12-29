@@ -213,9 +213,10 @@ async function translateSection(
     });
 
     if (!translateResponse.ok) {
-      if (translateResponse.status === 504 && retryCount === 0) {
-        console.warn(`504 timeout for ${sectionName}, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (translateResponse.status === 504 && retryCount < 2) {
+        const waitTime = (retryCount + 1) * 2000;
+        console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateSection(userId, sectionName, sectionContent, retryCount + 1);
       }
 
@@ -226,9 +227,10 @@ async function translateSection(
 
     return await translateResponse.json();
   } catch (error) {
-    if (retryCount === 0 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
-      console.warn(`Network error for ${sectionName}, retrying...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    if (retryCount < 2 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
+      const waitTime = (retryCount + 1) * 2000;
+      console.warn(`Network error for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
       return translateSection(userId, sectionName, sectionContent, retryCount + 1);
     }
     throw error;
@@ -250,7 +252,8 @@ async function translateSectionInBatches(
   sectionName: string,
   sectionContent: any
 ): Promise<any> {
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 3;
+  const BATCH_DELAY_MS = 1500;
 
   const arrayFields = findArrayFields(sectionContent);
 
@@ -275,7 +278,7 @@ async function translateSectionInBatches(
   const translatedBatches: any[] = [];
 
   for (let i = 0; i < batches.length; i++) {
-    console.log(`Translating ${sectionName} batch ${i + 1}/${batches.length}`);
+    console.log(`Translating ${sectionName} batch ${i + 1}/${batches.length} (${batches[i].length} items)`);
 
     const batchContent = {
       ...sectionContent,
@@ -286,7 +289,8 @@ async function translateSectionInBatches(
     translatedBatches.push(batchResult);
 
     if (i < batches.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`Waiting ${BATCH_DELAY_MS}ms before next batch...`);
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
 
