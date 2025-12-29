@@ -235,6 +235,64 @@ async function translateSection(
   }
 }
 
+async function translateMenuInBatches(
+  userId: string,
+  menuContent: any
+): Promise<any> {
+  const BATCH_SIZE = 6;
+
+  if (!menuContent.items || !Array.isArray(menuContent.items)) {
+    return translateSection(userId, 'menu', menuContent);
+  }
+
+  const items = menuContent.items;
+  const batches: any[][] = [];
+
+  for (let i = 0; i < items.length; i += BATCH_SIZE) {
+    batches.push(items.slice(i, i + BATCH_SIZE));
+  }
+
+  console.log(`Menu has ${items.length} items, splitting into ${batches.length} batches of ${BATCH_SIZE}`);
+
+  const translatedBatches: any[] = [];
+
+  for (let i = 0; i < batches.length; i++) {
+    console.log(`Translating menu batch ${i + 1}/${batches.length}`);
+
+    const batchContent = {
+      ...menuContent,
+      items: batches[i],
+    };
+
+    const batchResult = await translateSection(userId, 'menu', batchContent);
+    translatedBatches.push(batchResult);
+
+    if (i < batches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  const mergedResult: any = {};
+
+  for (const batchResult of translatedBatches) {
+    for (const lang in batchResult) {
+      if (!mergedResult[lang]) {
+        mergedResult[lang] = { ...batchResult[lang] };
+      } else {
+        if (batchResult[lang].items && Array.isArray(batchResult[lang].items)) {
+          if (!mergedResult[lang].items) {
+            mergedResult[lang].items = [];
+          }
+          mergedResult[lang].items.push(...batchResult[lang].items);
+        }
+      }
+    }
+  }
+
+  console.log('Menu batches merged successfully');
+  return mergedResult;
+}
+
 export async function translateAndSave(userId: string, allSectionData: any): Promise<boolean> {
   try {
     const sections = Object.keys(allSectionData);
@@ -249,7 +307,13 @@ export async function translateAndSave(userId: string, allSectionData: any): Pro
 
       console.log(`Translating section ${i + 1}/${sections.length}: ${sectionName}`);
 
-      const sectionTranslatedData = await translateSection(userId, sectionName, sectionContent);
+      let sectionTranslatedData;
+      if (sectionName === 'menu') {
+        sectionTranslatedData = await translateMenuInBatches(userId, sectionContent);
+      } else {
+        sectionTranslatedData = await translateSection(userId, sectionName, sectionContent);
+      }
+
       Object.assign(translatedData, sectionTranslatedData);
 
       console.log(`Section ${sectionName} translated successfully`);
