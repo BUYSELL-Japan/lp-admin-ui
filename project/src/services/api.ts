@@ -196,6 +196,7 @@ export async function translateAndSave(userId: string, allSectionData: any): Pro
       storeId: userId,
       section: 'all',
       content: allSectionData,
+      targetLanguages: ['en', 'zh', 'ko']
     };
 
     console.log('Translating content...');
