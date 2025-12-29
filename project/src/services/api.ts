@@ -297,13 +297,14 @@ async function translateCompanySection(
     console.log(`Translating ${part.name} (${i + 1}/${parts.length})`);
 
     const partResult = await translateSection(userId, 'company', part.content);
+    const actualPartData = partResult.translatedData || partResult;
 
-    for (const lang in partResult) {
+    for (const lang in actualPartData) {
       if (!translatedParts[lang]) {
         translatedParts[lang] = { company: {} };
       }
 
-      Object.assign(translatedParts[lang].company, partResult[lang].company);
+      Object.assign(translatedParts[lang].company, actualPartData[lang].company);
     }
 
     if (i < parts.length - 1) {
@@ -340,20 +341,21 @@ async function translatePricingSection(
     };
 
     const planResult = await translateSection(userId, 'pricing', singlePlanContent);
+    const actualPlanData = planResult.translatedData || planResult;
 
-    for (const lang in planResult) {
+    for (const lang in actualPlanData) {
       if (!translatedPlans[lang]) {
         translatedPlans[lang] = { pricing: { plans: [] } };
 
-        for (const key in planResult[lang].pricing) {
+        for (const key in actualPlanData[lang].pricing) {
           if (key !== 'plans') {
-            translatedPlans[lang].pricing[key] = planResult[lang].pricing[key];
+            translatedPlans[lang].pricing[key] = actualPlanData[lang].pricing[key];
           }
         }
       }
 
-      if (planResult[lang].pricing?.plans && Array.isArray(planResult[lang].pricing.plans)) {
-        translatedPlans[lang].pricing.plans.push(...planResult[lang].pricing.plans);
+      if (actualPlanData[lang].pricing?.plans && Array.isArray(actualPlanData[lang].pricing.plans)) {
+        translatedPlans[lang].pricing.plans.push(...actualPlanData[lang].pricing.plans);
       }
     }
 
@@ -436,11 +438,13 @@ async function translateSectionInBatches(
   const mergedResult: any = {};
 
   for (const batchResult of translatedBatches) {
-    for (const lang in batchResult) {
+    const actualBatchData = batchResult.translatedData || batchResult;
+
+    for (const lang in actualBatchData) {
       if (!mergedResult[lang]) {
-        mergedResult[lang] = JSON.parse(JSON.stringify(batchResult[lang]));
+        mergedResult[lang] = JSON.parse(JSON.stringify(actualBatchData[lang]));
       } else {
-        const batchArray = getNestedValue(batchResult[lang], mainArrayField);
+        const batchArray = getNestedValue(actualBatchData[lang], mainArrayField);
         if (batchArray && Array.isArray(batchArray)) {
           const existingArray = getNestedValue(mergedResult[lang], mainArrayField);
           if (!existingArray) {
@@ -479,7 +483,9 @@ export async function translateAndSave(
       const sectionContent = allSectionData[sectionName];
 
       const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
-      Object.assign(translatedData, sectionTranslatedData);
+
+      const actualData = sectionTranslatedData.translatedData || sectionTranslatedData;
+      Object.assign(translatedData, actualData);
 
       completedCount++;
       if (onProgress) {
