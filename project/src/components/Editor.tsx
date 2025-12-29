@@ -14,6 +14,7 @@ import {
   PricingEditor,
   FooterEditor,
 } from './EditorSections';
+import TranslationLoadingModal from './TranslationLoadingModal';
 
 interface EditorProps {
   userId: string | null;
@@ -29,6 +30,7 @@ const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncog
 export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
@@ -81,9 +83,9 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       alert('保存するにはログインが必要です');
       return;
     }
-    setIsSaving(true);
+    setIsTranslating(true);
     const success = await translateAndSave(userId, sectionData);
-    setIsSaving(false);
+    setIsTranslating(false);
     if (success) {
       alert('翻訳と保存が完了しました');
       const subdomain = await getSubdomain(userId);
@@ -182,7 +184,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={isSaving || isTranslating}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={16} />
@@ -190,7 +192,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               </button>
               <button
                 onClick={handleTranslateAndSave}
-                disabled={isSaving}
+                disabled={isSaving || isTranslating}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
               >
                 <Languages size={16} />
@@ -242,6 +244,8 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       <div className="flex-1 overflow-y-auto p-6">
         {renderEditor()}
       </div>
+
+      {isTranslating && <TranslationLoadingModal />}
     </div>
   );
 }

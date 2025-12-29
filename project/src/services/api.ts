@@ -190,6 +190,51 @@ export async function getSectionData(storeId: string): Promise<any | null> {
   }
 }
 
+async function translateSection(
+  userId: string,
+  sectionName: string,
+  sectionContent: any,
+  retryCount: number = 0
+): Promise<any> {
+  const translatePayload = {
+    storeId: userId,
+    section: sectionName,
+    content: { [sectionName]: sectionContent },
+    targetLanguages: ['en', 'zh', 'ko']
+  };
+
+  try {
+    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(translatePayload),
+    });
+
+    if (!translateResponse.ok) {
+      if (translateResponse.status === 504 && retryCount === 0) {
+        console.warn(`504 timeout for ${sectionName}, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return translateSection(userId, sectionName, sectionContent, retryCount + 1);
+      }
+
+      const errorText = await translateResponse.text();
+      console.error(`Translation API Error for ${sectionName}:`, errorText);
+      throw new Error(`Failed to translate section: ${sectionName}`);
+    }
+
+    return await translateResponse.json();
+  } catch (error) {
+    if (retryCount === 0 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
+      console.warn(`Network error for ${sectionName}, retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return translateSection(userId, sectionName, sectionContent, retryCount + 1);
+    }
+    throw error;
+  }
+}
+
 export async function translateAndSave(userId: string, allSectionData: any): Promise<boolean> {
   try {
     const sections = Object.keys(allSectionData);
@@ -204,28 +249,7 @@ export async function translateAndSave(userId: string, allSectionData: any): Pro
 
       console.log(`Translating section ${i + 1}/${sections.length}: ${sectionName}`);
 
-      const translatePayload = {
-        storeId: userId,
-        section: sectionName,
-        content: { [sectionName]: sectionContent },
-        targetLanguages: ['en', 'zh', 'ko']
-      };
-
-      const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(translatePayload),
-      });
-
-      if (!translateResponse.ok) {
-        const errorText = await translateResponse.text();
-        console.error(`Translation API Error for ${sectionName}:`, errorText);
-        throw new Error(`Failed to translate section: ${sectionName}`);
-      }
-
-      const sectionTranslatedData = await translateResponse.json();
+      const sectionTranslatedData = await translateSection(userId, sectionName, sectionContent);
       Object.assign(translatedData, sectionTranslatedData);
 
       console.log(`Section ${sectionName} translated successfully`);
