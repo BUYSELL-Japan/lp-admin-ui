@@ -237,14 +237,31 @@ async function translateSection(
   }
 }
 
-function findArrayFields(content: any): string[] {
+function findArrayFields(content: any, prefix: string = ''): string[] {
   const arrayFields: string[] = [];
   for (const key in content) {
+    const fullPath = prefix ? `${prefix}.${key}` : key;
     if (Array.isArray(content[key])) {
-      arrayFields.push(key);
+      arrayFields.push(fullPath);
+    } else if (content[key] && typeof content[key] === 'object') {
+      arrayFields.push(...findArrayFields(content[key], fullPath));
     }
   }
   return arrayFields;
+}
+
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+function setNestedValue(obj: any, path: string, value: any): void {
+  const keys = path.split('.');
+  const lastKey = keys.pop()!;
+  const target = keys.reduce((current, key) => {
+    if (!current[key]) current[key] = {};
+    return current[key];
+  }, obj);
+  target[lastKey] = value;
 }
 
 async function translateSectionInBatches(
@@ -252,8 +269,8 @@ async function translateSectionInBatches(
   sectionName: string,
   sectionContent: any
 ): Promise<any> {
-  const BATCH_SIZE = 3;
-  const BATCH_DELAY_MS = 1500;
+  const BATCH_SIZE = 2;
+  const BATCH_DELAY_MS = 2500;
 
   const arrayFields = findArrayFields(sectionContent);
 
@@ -262,7 +279,7 @@ async function translateSectionInBatches(
   }
 
   const mainArrayField = arrayFields[0];
-  const items = sectionContent[mainArrayField];
+  const items = getNestedValue(sectionContent, mainArrayField);
 
   if (!Array.isArray(items) || items.length <= BATCH_SIZE) {
     return translateSection(userId, sectionName, sectionContent);
@@ -280,10 +297,8 @@ async function translateSectionInBatches(
   for (let i = 0; i < batches.length; i++) {
     console.log(`Translating ${sectionName} batch ${i + 1}/${batches.length} (${batches[i].length} items)`);
 
-    const batchContent = {
-      ...sectionContent,
-      [mainArrayField]: batches[i],
-    };
+    const batchContent = JSON.parse(JSON.stringify(sectionContent));
+    setNestedValue(batchContent, mainArrayField, batches[i]);
 
     const batchResult = await translateSection(userId, sectionName, batchContent);
     translatedBatches.push(batchResult);
@@ -299,13 +314,16 @@ async function translateSectionInBatches(
   for (const batchResult of translatedBatches) {
     for (const lang in batchResult) {
       if (!mergedResult[lang]) {
-        mergedResult[lang] = { ...batchResult[lang] };
+        mergedResult[lang] = JSON.parse(JSON.stringify(batchResult[lang]));
       } else {
-        if (batchResult[lang][mainArrayField] && Array.isArray(batchResult[lang][mainArrayField])) {
-          if (!mergedResult[lang][mainArrayField]) {
-            mergedResult[lang][mainArrayField] = [];
+        const batchArray = getNestedValue(batchResult[lang], mainArrayField);
+        if (batchArray && Array.isArray(batchArray)) {
+          const existingArray = getNestedValue(mergedResult[lang], mainArrayField);
+          if (!existingArray) {
+            setNestedValue(mergedResult[lang], mainArrayField, []);
           }
-          mergedResult[lang][mainArrayField].push(...batchResult[lang][mainArrayField]);
+          const targetArray = getNestedValue(mergedResult[lang], mainArrayField);
+          targetArray.push(...batchArray);
         }
       }
     }
