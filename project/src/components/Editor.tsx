@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, Settings, LogIn } from 'lucide-react';
 import { saveAllSections, getSubdomain } from '../services/api';
 import {
+  HeaderEditor,
   HeroEditor,
   AboutEditor,
   MenuEditor,
@@ -11,6 +12,7 @@ import {
   StoreInfoEditor,
   CTAEditor,
   PricingEditor,
+  FooterEditor,
 } from './EditorSections';
 
 interface EditorProps {
@@ -31,6 +33,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
   const sections = [
+    { id: 'header', label: 'ヘッダー' },
     { id: 'hero', label: 'ヒーロー' },
     { id: 'about', label: 'こだわり' },
     { id: 'menu', label: 'お品書き' },
@@ -45,6 +48,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     { id: 'access', label: 'アクセス' },
     { id: 'faq', label: 'よくある質問' },
     { id: 'contact', label: 'お問い合わせ' },
+    { id: 'footer', label: 'フッター' },
   ];
 
   useEffect(() => {
@@ -94,6 +98,8 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     }
 
     switch (activeSection) {
+      case 'header':
+        return <HeaderEditor data={data} onUpdate={updateSectionData} />;
       case 'hero':
         return <HeroEditor data={data} onUpdate={updateSectionData} />;
       case 'about':
@@ -112,6 +118,8 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         return <CTAEditor data={data} onUpdate={updateSectionData} />;
       case 'pricing':
         return <PricingEditor data={data} onUpdate={updateSectionData} />;
+      case 'footer':
+        return <FooterEditor data={data} onUpdate={updateSectionData} />;
       default:
         return (
           <div className="text-center text-gray-500 py-8">

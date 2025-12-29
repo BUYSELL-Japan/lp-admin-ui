@@ -1,5 +1,6 @@
 import ImageUpload from './ImageUpload';
 import type {
+  HeaderData,
   HeroData,
   AboutData,
   MenuData,
@@ -9,11 +10,63 @@ import type {
   StoreInfoData,
   CTAData,
   PricingData,
+  FooterData,
 } from '../data/types';
 
 interface EditorSectionProps {
   data: any;
   onUpdate: (updates: any) => void;
+}
+
+export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
+  const headerData = data as HeaderData;
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">ロゴテキスト</label>
+        <input
+          type="text"
+          value={headerData.logo.text}
+          onChange={(e) => onUpdate({ logo: { text: e.target.value } })}
+          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">ナビゲーション項目</label>
+        <div className="space-y-3 max-h-[500px] overflow-y-auto">
+          {headerData.navigation.map((item, index) => (
+            <div key={index} className="p-3 border border-gray-200 rounded-lg space-y-2">
+              <h4 className="font-medium text-sm">項目 {index + 1}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">ID</label>
+                  <input
+                    type="text"
+                    value={item.id}
+                    disabled
+                    className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-100 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">ラベル</label>
+                  <input
+                    type="text"
+                    value={item.label}
+                    onChange={(e) => {
+                      const newNavigation = [...headerData.navigation];
+                      newNavigation[index] = { ...item, label: e.target.value };
+                      onUpdate({ navigation: newNavigation });
+                    }}
+                    className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
@@ -584,6 +637,128 @@ export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
+  const footerData = data as FooterData;
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">ロゴ</label>
+        <input
+          type="text"
+          value={footerData.logo}
+          onChange={(e) => onUpdate({ logo: e.target.value })}
+          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">説明</label>
+        <textarea
+          value={footerData.description}
+          onChange={(e) => onUpdate({ description: e.target.value })}
+          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          rows={2}
+        />
+      </div>
+      <div className="p-4 border border-gray-200 rounded-lg space-y-3">
+        <h4 className="font-medium">営業時間</h4>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">タイトル</label>
+          <input
+            type="text"
+            value={footerData.businessHours.title}
+            onChange={(e) => onUpdate({
+              businessHours: { ...footerData.businessHours, title: e.target.value }
+            })}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">営業日</label>
+          <input
+            type="text"
+            value={footerData.businessHours.days}
+            onChange={(e) => onUpdate({
+              businessHours: { ...footerData.businessHours, days: e.target.value }
+            })}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">営業時間</label>
+          <input
+            type="text"
+            value={footerData.businessHours.hours}
+            onChange={(e) => onUpdate({
+              businessHours: { ...footerData.businessHours, hours: e.target.value }
+            })}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">定休日</label>
+          <input
+            type="text"
+            value={footerData.businessHours.closedDay}
+            onChange={(e) => onUpdate({
+              businessHours: { ...footerData.businessHours, closedDay: e.target.value }
+            })}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+      </div>
+      <div className="p-4 border border-gray-200 rounded-lg space-y-3">
+        <h4 className="font-medium">SNS</h4>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">タイトル</label>
+          <input
+            type="text"
+            value={footerData.social.title}
+            onChange={(e) => onUpdate({
+              social: { ...footerData.social, title: e.target.value }
+            })}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        {footerData.social.links.map((link, index) => (
+          <div key={index} className="p-3 border border-gray-100 rounded space-y-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">プラットフォーム</label>
+              <input
+                type="text"
+                value={link.platform}
+                disabled
+                className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-100 text-gray-600 cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">URL</label>
+              <input
+                type="text"
+                value={link.url}
+                onChange={(e) => {
+                  const newLinks = [...footerData.social.links];
+                  newLinks[index] = { ...link, url: e.target.value };
+                  onUpdate({ social: { ...footerData.social, links: newLinks } });
+                }}
+                className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">コピーライト</label>
+        <input
+          type="text"
+          value={footerData.copyright}
+          onChange={(e) => onUpdate({ copyright: e.target.value })}
+          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
     </div>
   );
 }
