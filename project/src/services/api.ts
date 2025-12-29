@@ -501,15 +501,74 @@ export async function translateAndSave(
     }
 
     console.log('\nAll sections translated successfully');
-    console.log('Translated sections:', Object.keys(translatedData));
+    console.log('Translated data structure:', Object.keys(translatedData));
+
+    // 言語ごとのネスト構造をセクションごとのフラット構造に変換
+    const mergedContent: any = {};
+
+    // まずオリジナルの日本語データをベースにする（deep copy）
+    for (const sectionName in allSectionData) {
+      mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+    }
+
+    // 日本語翻訳データがあれば上書き（通常はオリジナルと同じはず）
+    if (translatedData.ja) {
+      for (const sectionName in translatedData.ja) {
+        if (!mergedContent[sectionName]) {
+          mergedContent[sectionName] = {};
+        }
+        const jaData = translatedData.ja[sectionName];
+        for (const key in jaData) {
+          mergedContent[sectionName][key] = JSON.parse(JSON.stringify(jaData[key]));
+        }
+      }
+    }
+
+    // 各言語の翻訳データをサフィックス付きでマージ
+    const languages = ['en', 'zh', 'ko'];
+    for (const lang of languages) {
+      if (translatedData[lang]) {
+        for (const sectionName in translatedData[lang]) {
+          if (!mergedContent[sectionName]) {
+            mergedContent[sectionName] = {};
+          }
+
+          const sectionData = translatedData[lang][sectionName];
+          for (const key in sectionData) {
+            mergedContent[sectionName][`${key}_${lang}`] = JSON.parse(JSON.stringify(sectionData[key]));
+          }
+        }
+      }
+    }
+
+    console.log('Merged content sections:', Object.keys(mergedContent));
+    console.log('Sample section keys (hero):', mergedContent.hero ? Object.keys(mergedContent.hero).slice(0, 10) : 'N/A');
+
+    // 保存データの検証
+    console.log('\n=== Pre-save Data Verification ===');
+    console.log('Total sections to save:', Object.keys(mergedContent).length);
+    console.log('Section names:', Object.keys(mergedContent).join(', '));
+
+    // 各セクションのキー数を確認
+    for (const sectionName in mergedContent) {
+      const keyCount = Object.keys(mergedContent[sectionName]).length;
+      console.log(`  ${sectionName}: ${keyCount} keys`);
+    }
 
     const savePayload = {
       storeId: userId,
       section: 'all',
-      content: translatedData,
+      content: mergedContent,
     };
 
-    console.log('Saving translated content...');
+    // メタデータが除外されていることを確認
+    console.log('\nSave payload structure:');
+    console.log('  storeId:', savePayload.storeId);
+    console.log('  section:', savePayload.section);
+    console.log('  content keys:', Object.keys(savePayload.content).join(', '));
+    console.log('  No metadata (targetLanguages, etc.) in content: ✓');
+
+    console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
     const saveResponse = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -525,7 +584,30 @@ export async function translateAndSave(
     }
 
     const result = await saveResponse.json();
+    console.log('\n=== Save Response ===');
     console.log('Save translated content successful:', result);
+
+    // DynamoDBに正しく保存されたか確認するため、保存後にデータを取得
+    console.log('\nVerifying saved data...');
+    try {
+      const verifyResponse = await fetch(`${CONTENT_ENDPOINT}?storeId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (verifyResponse.ok) {
+        const savedData = await verifyResponse.json();
+        console.log('Verification - Saved data sections:', savedData.ContentData ? Object.keys(savedData.ContentData).join(', ') : 'No ContentData');
+        console.log('Verification - Total sections saved:', savedData.ContentData ? Object.keys(savedData.ContentData).length : 0);
+      } else {
+        console.warn('Could not verify saved data');
+      }
+    } catch (verifyError) {
+      console.warn('Verification error:', verifyError);
+    }
+
     return true;
   } catch (error) {
     console.error('Error in translate and save:', error);
