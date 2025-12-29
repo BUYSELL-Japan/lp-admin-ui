@@ -132,17 +132,27 @@ function App() {
   useEffect(() => {
     const loadSectionData = async () => {
       if (userId) {
-        console.log('Loading section data for user:', userId);
+        console.log('=== Loading Section Data ===');
+        console.log('User ID:', userId);
         const savedData = await getSectionData(userId);
+        console.log('Saved data received:', savedData);
         if (savedData) {
+          console.log('Saved data keys:', Object.keys(savedData));
+          console.log('Saved data hero sample:', savedData.hero);
           console.log('Merging saved data with default data');
-          setSectionData((prev) => ({
-            ...prev,
-            ...savedData,
-          }));
+          setSectionData((prev) => {
+            const merged = {
+              ...prev,
+              ...savedData,
+            };
+            console.log('Merged data keys:', Object.keys(merged));
+            console.log('Merged hero sample:', merged.hero);
+            return merged;
+          });
         } else {
           console.log('No saved data found, using default data');
         }
+        console.log('===========================');
       }
     };
 

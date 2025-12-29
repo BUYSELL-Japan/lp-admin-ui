@@ -159,8 +159,23 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     }
 
     const result = await response.json();
-    console.log('Fetched section data:', result);
-    return result.content || result;
+    console.log('=== API Response Debug ===');
+    console.log('Raw result:', JSON.stringify(result, null, 2));
+    console.log('result.content:', result.content);
+    console.log('result.Content:', result.Content);
+    console.log('result type:', typeof result);
+    console.log('result keys:', Object.keys(result));
+    console.log('========================');
+
+    if (result.content) {
+      return result.content;
+    } else if (result.Content) {
+      return result.Content;
+    } else if (result.hero || result.about || result.menu) {
+      return result;
+    }
+
+    return null;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
