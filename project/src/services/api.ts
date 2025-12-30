@@ -84,10 +84,49 @@ export async function saveSection(userId: string, section: string, data: any): P
 
 export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
   try {
+    console.log('=== Saving all sections ===');
+    console.log('Fetching existing data to preserve translations...');
+
+    // 既存のデータを取得して翻訳データを保持
+    const existingData = await getSectionData(userId);
+    const contentToSave: any = {};
+
+    // 新しい日本語データをベースにする
+    for (const sectionName in allSectionData) {
+      contentToSave[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+    }
+
+    // 既存の翻訳データがあれば保持
+    if (existingData) {
+      console.log('Existing data found, preserving translation keys...');
+      for (const sectionName in existingData) {
+        if (contentToSave[sectionName]) {
+          const existingSection = existingData[sectionName];
+          // 翻訳キー（_en, _zh, _ko で終わるキー）を抽出
+          for (const key in existingSection) {
+            if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
+              contentToSave[sectionName][key] = existingSection[key];
+            }
+          }
+        }
+      }
+
+      // 翻訳データが保持されたか確認
+      let preservedTranslationKeys = 0;
+      for (const sectionName in contentToSave) {
+        const keys = Object.keys(contentToSave[sectionName]);
+        const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
+        preservedTranslationKeys += translationKeys.length;
+      }
+      console.log(`Preserved ${preservedTranslationKeys} translation keys from existing data`);
+    } else {
+      console.log('No existing data found, saving new data only');
+    }
+
     const payload = {
       storeId: userId,
       section: 'all',
-      content: allSectionData,
+      content: contentToSave,
     };
 
     const response = await fetch(API_ENDPOINT, {
@@ -487,7 +526,14 @@ export async function translateAndSave(
       const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
 
       const actualData = sectionTranslatedData.translatedData || sectionTranslatedData;
-      Object.assign(translatedData, actualData);
+
+      // 深いマージを行う（各言語ごとにセクションデータを追加）
+      for (const lang in actualData) {
+        if (!translatedData[lang]) {
+          translatedData[lang] = {};
+        }
+        Object.assign(translatedData[lang], actualData[lang]);
+      }
 
       completedCount++;
       if (onProgress) {
@@ -504,6 +550,11 @@ export async function translateAndSave(
 
     console.log('\nAll sections translated successfully');
     console.log('Translated data structure:', Object.keys(translatedData));
+
+    // 翻訳データの内容を確認
+    for (const lang in translatedData) {
+      console.log(`  Language ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
+    }
 
     // 言語ごとのネスト構造をセクションごとのフラット構造に変換
     const mergedContent: any = {};
@@ -544,7 +595,16 @@ export async function translateAndSave(
     }
 
     console.log('Merged content sections:', Object.keys(mergedContent));
-    console.log('Sample section keys (hero):', mergedContent.hero ? Object.keys(mergedContent.hero).slice(0, 10) : 'N/A');
+
+    // 各セクションのキーをサンプル表示（翻訳データが含まれているか確認）
+    for (const sectionName in mergedContent) {
+      const keys = Object.keys(mergedContent[sectionName]);
+      const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
+      console.log(`  ${sectionName}: ${keys.length} keys total, ${translationKeys.length} translation keys`);
+      if (translationKeys.length > 0) {
+        console.log(`    Sample translation keys: ${translationKeys.slice(0, 3).join(', ')}`);
+      }
+    }
 
     // 保存データの検証
     console.log('\n=== Pre-save Data Verification ===');
@@ -564,11 +624,35 @@ export async function translateAndSave(
     };
 
     // メタデータが除外されていることを確認
-    console.log('\nSave payload structure:');
+    console.log('\n=== Save Payload Structure ===');
     console.log('  storeId:', savePayload.storeId);
     console.log('  section:', savePayload.section);
     console.log('  content keys:', Object.keys(savePayload.content).join(', '));
-    console.log('  No metadata (targetLanguages, etc.) in content: ✓');
+
+    // ペイロード構造の検証（二重構造になっていないか確認）
+    console.log('\n=== Payload Structure Validation ===');
+    console.log('  Top level keys:', Object.keys(savePayload).join(', '));
+    console.log('  savePayload.content is object:', typeof savePayload.content === 'object');
+    console.log('  savePayload.content.content exists:', 'content' in savePayload.content);
+    if ('content' in savePayload.content) {
+      console.error('  ⚠️ WARNING: Double-nested content structure detected!');
+    } else {
+      console.log('  ✓ No double nesting - structure is correct');
+    }
+
+    // 翻訳データが含まれているか最終確認
+    let totalTranslationKeys = 0;
+    for (const sectionName in savePayload.content) {
+      const keys = Object.keys(savePayload.content[sectionName]);
+      const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
+      totalTranslationKeys += translationKeys.length;
+    }
+    console.log(`  Total translation keys in payload: ${totalTranslationKeys}`);
+    if (totalTranslationKeys === 0) {
+      console.error('  ⚠️ WARNING: No translation data in payload!');
+    } else {
+      console.log(`  ✓ Translation data confirmed (${totalTranslationKeys} keys)`);
+    }
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
     const saveResponse = await fetch(API_ENDPOINT, {
