@@ -540,13 +540,27 @@ export async function translateAndSave(
         if (!translatedData[lang]) {
           translatedData[lang] = {};
         }
-        Object.assign(translatedData[lang], actualData[lang]);
+
+        // actualData[lang] が実際にセクションデータを持っているか確認
+        const langData = actualData[lang];
+        if (langData && typeof langData === 'object') {
+          // langData が { sectionName: {...} } という構造の場合（正しい構造）
+          for (const secName in langData) {
+            if (!translatedData[lang][secName]) {
+              translatedData[lang][secName] = {};
+            }
+            // 深いコピーでマージ
+            Object.assign(translatedData[lang][secName], JSON.parse(JSON.stringify(langData[secName])));
+          }
+        }
       }
 
       // デバッグ：マージ後の translatedData の状態を確認
       console.log(`  After merge, translatedData has languages:`, Object.keys(translatedData).join(', '));
       for (const lang in translatedData) {
-        console.log(`    ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
+        if (typeof translatedData[lang] === 'object') {
+          console.log(`    ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
+        }
       }
 
       completedCount++;
