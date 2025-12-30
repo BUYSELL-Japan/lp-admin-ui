@@ -509,11 +509,16 @@ export async function translateAndSave(
 ): Promise<boolean> {
   try {
     const sections = Object.keys(allSectionData);
-    const translatedData: any = {};
+    const mergedContent: any = {};
 
     console.log('Translating content with full serial processing...');
     console.log('Total sections to translate:', sections.length);
     console.log('All sections will be processed one by one to avoid API Gateway timeout');
+
+    // まずオリジナルの日本語データをベースにコピー
+    for (const sectionName in allSectionData) {
+      mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+    }
 
     let completedCount = 0;
 
@@ -529,38 +534,26 @@ export async function translateAndSave(
 
       // デバッグ：返された翻訳データの構造を確認
       console.log(`  actualData structure for ${sectionName}:`, Object.keys(actualData).join(', '));
-      for (const lang in actualData) {
-        if (typeof actualData[lang] === 'object' && actualData[lang] !== null) {
-          console.log(`    ${lang}:`, Object.keys(actualData[lang]).join(', '));
-        }
-      }
 
-      // 深いマージを行う（各言語ごとにセクションデータを追加）
-      for (const lang in actualData) {
-        if (!translatedData[lang]) {
-          translatedData[lang] = {};
+      // actualData は { header: {...}, hero: {...} } のような構造で、
+      // 各セクション内に title_en, title_zh などの翻訳キーが含まれている
+      // これを直接 mergedContent にマージする
+      for (const secName in actualData) {
+        if (!mergedContent[secName]) {
+          mergedContent[secName] = {};
         }
 
-        // actualData[lang] が実際にセクションデータを持っているか確認
-        const langData = actualData[lang];
-        if (langData && typeof langData === 'object') {
-          // langData が { sectionName: {...} } という構造の場合（正しい構造）
-          for (const secName in langData) {
-            if (!translatedData[lang][secName]) {
-              translatedData[lang][secName] = {};
-            }
-            // 深いコピーでマージ
-            Object.assign(translatedData[lang][secName], JSON.parse(JSON.stringify(langData[secName])));
-          }
-        }
-      }
+        const sectionData = actualData[secName];
+        console.log(`  Merging section ${secName}, keys:`, Object.keys(sectionData).join(', '));
 
-      // デバッグ：マージ後の translatedData の状態を確認
-      console.log(`  After merge, translatedData has languages:`, Object.keys(translatedData).join(', '));
-      for (const lang in translatedData) {
-        if (typeof translatedData[lang] === 'object') {
-          console.log(`    ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
+        // 翻訳キー（_en, _zh, _ko）を含む全てのキーをマージ
+        for (const key in sectionData) {
+          mergedContent[secName][key] = JSON.parse(JSON.stringify(sectionData[key]));
         }
+
+        // デバッグ：マージ後のキーを確認
+        const translationKeys = Object.keys(mergedContent[secName]).filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
+        console.log(`    Translation keys in ${secName}: ${translationKeys.length} keys`);
       }
 
       completedCount++;
@@ -577,71 +570,16 @@ export async function translateAndSave(
     }
 
     console.log('\nAll sections translated successfully');
-    console.log('Translated data structure:', Object.keys(translatedData));
+    console.log('Merged content structure:', Object.keys(mergedContent).join(', '));
+    console.log('\n=== Final Merged Content ===');
 
-    // 翻訳データの内容を確認
-    for (const lang in translatedData) {
-      console.log(`  Language ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
-    }
-
-    // 言語ごとのネスト構造をセクションごとのフラット構造に変換
-    const mergedContent: any = {};
-
-    // まずオリジナルの日本語データをベースにする（deep copy）
-    for (const sectionName in allSectionData) {
-      mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
-    }
-
-    // 日本語翻訳データがあれば上書き（通常はオリジナルと同じはず）
-    if (translatedData.ja) {
-      for (const sectionName in translatedData.ja) {
-        if (!mergedContent[sectionName]) {
-          mergedContent[sectionName] = {};
-        }
-        const jaData = translatedData.ja[sectionName];
-        for (const key in jaData) {
-          mergedContent[sectionName][key] = JSON.parse(JSON.stringify(jaData[key]));
-        }
-      }
-    }
-
-    // 各言語の翻訳データをサフィックス付きでマージ
-    console.log('\n=== Merging Translated Data ===');
-    const languages = ['en', 'zh', 'ko'];
-    for (const lang of languages) {
-      if (translatedData[lang]) {
-        console.log(`\nProcessing language: ${lang}`);
-        console.log(`  Available sections in translatedData.${lang}:`, Object.keys(translatedData[lang]).join(', '));
-
-        for (const sectionName in translatedData[lang]) {
-          if (!mergedContent[sectionName]) {
-            mergedContent[sectionName] = {};
-          }
-
-          const sectionData = translatedData[lang][sectionName];
-          console.log(`  Section ${sectionName} has ${Object.keys(sectionData).length} keys`);
-
-          let addedKeys = 0;
-          for (const key in sectionData) {
-            mergedContent[sectionName][`${key}_${lang}`] = JSON.parse(JSON.stringify(sectionData[key]));
-            addedKeys++;
-          }
-          console.log(`  Added ${addedKeys} translation keys to mergedContent.${sectionName}`);
-        }
-      } else {
-        console.log(`\nLanguage ${lang} not found in translatedData`);
-      }
-    }
-
-    console.log('Merged content sections:', Object.keys(mergedContent));
-
-    // 各セクションのキーをサンプル表示（翻訳データが含まれているか確認）
+    // 各セクションのキーを表示（翻訳データが含まれているか確認）
     for (const sectionName in mergedContent) {
       const keys = Object.keys(mergedContent[sectionName]);
-      const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
+      const translationKeys = keys.filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
       console.log(`  ${sectionName}: ${keys.length} keys total, ${translationKeys.length} translation keys`);
       if (translationKeys.length > 0) {
-        console.log(`    Sample translation keys: ${translationKeys.slice(0, 3).join(', ')}`);
+        console.log(`    Sample translation keys: ${translationKeys.slice(0, 5).join(', ')}`);
       }
     }
 
@@ -683,7 +621,7 @@ export async function translateAndSave(
     let totalTranslationKeys = 0;
     for (const sectionName in savePayload.content) {
       const keys = Object.keys(savePayload.content[sectionName]);
-      const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
+      const translationKeys = keys.filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
       totalTranslationKeys += translationKeys.length;
     }
     console.log(`  Total translation keys in payload: ${totalTranslationKeys}`);
