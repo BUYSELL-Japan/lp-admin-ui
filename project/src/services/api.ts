@@ -213,9 +213,10 @@ async function translateSection(
     });
 
     if (!translateResponse.ok) {
-      if (translateResponse.status === 504 && retryCount < 2) {
-        const waitTime = retryCount === 0 ? 12000 : 20000;
-        console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
+      if (translateResponse.status === 504 && retryCount < 3) {
+        const waitTimes = [15000, 25000, 35000];
+        const waitTime = waitTimes[retryCount];
+        console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateSection(userId, sectionName, sectionContent, retryCount + 1);
       }
@@ -227,9 +228,10 @@ async function translateSection(
 
     return await translateResponse.json();
   } catch (error) {
-    if (retryCount < 2 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
-      const waitTime = retryCount === 0 ? 12000 : 20000;
-      console.warn(`Network error for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
+    if (retryCount < 3 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
+      const waitTimes = [15000, 25000, 35000];
+      const waitTime = waitTimes[retryCount];
+      console.warn(`Network error for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return translateSection(userId, sectionName, sectionContent, retryCount + 1);
     }
@@ -308,8 +310,8 @@ async function translateCompanySection(
     }
 
     if (i < parts.length - 1) {
-      console.log('Waiting 2s before next company part...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Waiting 5s before next company part...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 
@@ -360,8 +362,8 @@ async function translatePricingSection(
     }
 
     if (i < plans.length - 1) {
-      console.log('Waiting 2s before next pricing plan...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Waiting 5s before next pricing plan...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 
@@ -383,7 +385,7 @@ async function translateSectionInBatches(
   }
 
   const BATCH_SIZE = 4;
-  const BATCH_DELAY_MS = 2000;
+  const BATCH_DELAY_MS = 5000;
 
   const arrayFields = findArrayFields(sectionContent);
 
@@ -495,8 +497,8 @@ export async function translateAndSave(
       console.log(`✓ Section ${sectionName} completed (${completedCount}/${sections.length})`);
 
       if (i < sections.length - 1) {
-        console.log('Waiting 2s before next section...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Waiting 5s before next section...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
 
