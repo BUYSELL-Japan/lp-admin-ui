@@ -527,12 +527,26 @@ export async function translateAndSave(
 
       const actualData = sectionTranslatedData.translatedData || sectionTranslatedData;
 
+      // デバッグ：返された翻訳データの構造を確認
+      console.log(`  actualData structure for ${sectionName}:`, Object.keys(actualData).join(', '));
+      for (const lang in actualData) {
+        if (typeof actualData[lang] === 'object' && actualData[lang] !== null) {
+          console.log(`    ${lang}:`, Object.keys(actualData[lang]).join(', '));
+        }
+      }
+
       // 深いマージを行う（各言語ごとにセクションデータを追加）
       for (const lang in actualData) {
         if (!translatedData[lang]) {
           translatedData[lang] = {};
         }
         Object.assign(translatedData[lang], actualData[lang]);
+      }
+
+      // デバッグ：マージ後の translatedData の状態を確認
+      console.log(`  After merge, translatedData has languages:`, Object.keys(translatedData).join(', '));
+      for (const lang in translatedData) {
+        console.log(`    ${lang} sections:`, Object.keys(translatedData[lang]).join(', '));
       }
 
       completedCount++;
@@ -578,19 +592,30 @@ export async function translateAndSave(
     }
 
     // 各言語の翻訳データをサフィックス付きでマージ
+    console.log('\n=== Merging Translated Data ===');
     const languages = ['en', 'zh', 'ko'];
     for (const lang of languages) {
       if (translatedData[lang]) {
+        console.log(`\nProcessing language: ${lang}`);
+        console.log(`  Available sections in translatedData.${lang}:`, Object.keys(translatedData[lang]).join(', '));
+
         for (const sectionName in translatedData[lang]) {
           if (!mergedContent[sectionName]) {
             mergedContent[sectionName] = {};
           }
 
           const sectionData = translatedData[lang][sectionName];
+          console.log(`  Section ${sectionName} has ${Object.keys(sectionData).length} keys`);
+
+          let addedKeys = 0;
           for (const key in sectionData) {
             mergedContent[sectionName][`${key}_${lang}`] = JSON.parse(JSON.stringify(sectionData[key]));
+            addedKeys++;
           }
+          console.log(`  Added ${addedKeys} translation keys to mergedContent.${sectionName}`);
         }
+      } else {
+        console.log(`\nLanguage ${lang} not found in translatedData`);
       }
     }
 
