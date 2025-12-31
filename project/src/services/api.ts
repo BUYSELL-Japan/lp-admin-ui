@@ -475,6 +475,113 @@ async function translatePricingSection(
   return translatedPlans;
 }
 
+async function translateStaffSection(userId: string, staffContent: any): Promise<any> {
+  console.log('Translating staff section with one-by-one member processing...');
+
+  const members = staffContent.members || [];
+  if (members.length === 0) {
+    return translateSection(userId, 'staff', staffContent);
+  }
+
+  console.log(`Staff has ${members.length} members, will process one by one to avoid timeouts`);
+
+  const translatedMembers: any = {};
+
+  for (let i = 0; i < members.length; i++) {
+    console.log(`Translating staff member ${i + 1}/${members.length}...`);
+
+    const singleMemberContent = {
+      ...staffContent,
+      members: [members[i]],
+    };
+
+    try {
+      const memberResult = await translateSection(userId, 'staff', singleMemberContent);
+      const actualMemberData = memberResult.translatedData || memberResult;
+
+      for (const lang in actualMemberData) {
+        if (!translatedMembers[lang]) {
+          translatedMembers[lang] = { staff: { members: [] } };
+
+          for (const key in actualMemberData[lang].staff) {
+            if (key !== 'members') {
+              translatedMembers[lang].staff[key] = actualMemberData[lang].staff[key];
+            }
+          }
+        }
+
+        if (actualMemberData[lang].staff?.members && Array.isArray(actualMemberData[lang].staff.members)) {
+          translatedMembers[lang].staff.members.push(...actualMemberData[lang].staff.members);
+        }
+      }
+
+      if (i < members.length - 1) {
+        console.log('Waiting 5s before next staff member...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } catch (error) {
+      console.error(`Failed to translate staff member ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  console.log('Staff section members merged successfully');
+  return translatedMembers;
+}
+
+async function translateArraySectionOneByOne(
+  userId: string,
+  sectionName: string,
+  sectionContent: any,
+  mainArrayField: string,
+  items: any[]
+): Promise<any> {
+  console.log(`${sectionName}: Processing ${items.length} items one by one due to timeout prevention`);
+
+  const translatedItems: any = {};
+
+  for (let i = 0; i < items.length; i++) {
+    console.log(`${sectionName}: Translating item ${i + 1}/${items.length}...`);
+
+    const singleItemContent = JSON.parse(JSON.stringify(sectionContent));
+    setNestedValue(singleItemContent, mainArrayField, [items[i]]);
+
+    try {
+      const itemResult = await translateSection(userId, sectionName, singleItemContent);
+      const actualItemData = itemResult.translatedData || itemResult;
+
+      for (const lang in actualItemData) {
+        if (!translatedItems[lang]) {
+          translatedItems[lang] = JSON.parse(JSON.stringify(actualItemData[lang]));
+          const langArray = getNestedValue(translatedItems[lang], mainArrayField);
+          if (langArray && Array.isArray(langArray)) {
+            setNestedValue(translatedItems[lang], mainArrayField, []);
+          }
+        }
+
+        const itemArray = getNestedValue(actualItemData[lang], mainArrayField);
+        if (itemArray && Array.isArray(itemArray)) {
+          const targetArray = getNestedValue(translatedItems[lang], mainArrayField);
+          if (targetArray && Array.isArray(targetArray)) {
+            targetArray.push(...itemArray);
+          }
+        }
+      }
+
+      if (i < items.length - 1) {
+        console.log('Waiting 5s before next item...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } catch (error) {
+      console.error(`${sectionName}: Failed to translate item ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  console.log(`${sectionName}: All items merged successfully`);
+  return translatedItems;
+}
+
 async function translateSectionInBatches(
   userId: string,
   sectionName: string,
@@ -488,7 +595,11 @@ async function translateSectionInBatches(
     return translatePricingSection(userId, sectionContent);
   }
 
-  const BATCH_SIZE = 4;
+  if (sectionName === 'staff') {
+    return translateStaffSection(userId, sectionContent);
+  }
+
+  let BATCH_SIZE = 4;
   const BATCH_DELAY_MS = 5000;
 
   const arrayFields = findArrayFields(sectionContent);
@@ -511,36 +622,63 @@ async function translateSectionInBatches(
 
   if (items.length <= BATCH_SIZE) {
     console.log(`${sectionName}: ${items.length} items <= batch size (${BATCH_SIZE}), processing in single request`);
-    return translateSection(userId, sectionName, sectionContent);
-  }
-
-  const batches: any[][] = [];
-  for (let i = 0; i < items.length; i += BATCH_SIZE) {
-    batches.push(items.slice(i, i + BATCH_SIZE));
-  }
-
-  console.log(`${sectionName}: Splitting ${items.length} items into ${batches.length} batches of max ${BATCH_SIZE} items each`);
-
-  const translatedBatches: any[] = [];
-
-  for (let i = 0; i < batches.length; i++) {
-    console.log(`${sectionName}: Translating batch ${i + 1}/${batches.length} (${batches[i].length} items)...`);
-
-    const batchContent = JSON.parse(JSON.stringify(sectionContent));
-    setNestedValue(batchContent, mainArrayField, batches[i]);
-
-    const batchResult = await translateSection(userId, sectionName, batchContent);
-    translatedBatches.push(batchResult);
-
-    console.log(`${sectionName}: Batch ${i + 1}/${batches.length} completed`);
-
-    if (i < batches.length - 1) {
-      console.log(`Waiting ${BATCH_DELAY_MS}ms before next batch...`);
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+    try {
+      return await translateSection(userId, sectionName, sectionContent);
+    } catch (error: any) {
+      if (error.message?.includes('504') || error.message?.includes('500')) {
+        console.warn(`${sectionName}: Got timeout/error with ${items.length} items, falling back to one-by-one processing`);
+        return translateArraySectionOneByOne(userId, sectionName, sectionContent, mainArrayField, items);
+      }
+      throw error;
     }
   }
 
-  console.log(`${sectionName}: Merging ${batches.length} batches...`);
+  const translatedBatches: any[] = [];
+  let currentBatchSize = BATCH_SIZE;
+
+  for (let i = 0; i < items.length; i += currentBatchSize) {
+    const batch = items.slice(i, i + currentBatchSize);
+    const batchNumber = Math.floor(i / currentBatchSize) + 1;
+    const totalBatches = Math.ceil(items.length / currentBatchSize);
+
+    console.log(`${sectionName}: Translating batch ${batchNumber} (${batch.length} items, batch size: ${currentBatchSize})...`);
+
+    const batchContent = JSON.parse(JSON.stringify(sectionContent));
+    setNestedValue(batchContent, mainArrayField, batch);
+
+    try {
+      const batchResult = await translateSection(userId, sectionName, batchContent);
+      translatedBatches.push(batchResult);
+
+      console.log(`${sectionName}: Batch ${batchNumber} completed`);
+
+      if (i + currentBatchSize < items.length) {
+        console.log(`Waiting ${BATCH_DELAY_MS}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+      }
+    } catch (error: any) {
+      if ((error.message?.includes('504') || error.message?.includes('500')) && currentBatchSize > 1) {
+        console.warn(`${sectionName}: Batch ${batchNumber} failed with timeout/error, reducing batch size to 1 and retrying remaining items`);
+
+        const remainingItems = items.slice(i);
+        console.log(`${sectionName}: Processing ${remainingItems.length} remaining items one by one...`);
+
+        const remainingResult = await translateArraySectionOneByOne(
+          userId,
+          sectionName,
+          sectionContent,
+          mainArrayField,
+          remainingItems
+        );
+
+        translatedBatches.push(remainingResult);
+        break;
+      }
+      throw error;
+    }
+  }
+
+  console.log(`${sectionName}: Merging ${translatedBatches.length} batches...`);
   const mergedResult: any = {};
 
   for (const batchResult of translatedBatches) {
