@@ -13,6 +13,11 @@ import {
   CTAEditor,
   PricingEditor,
   FooterEditor,
+  ReviewsEditor,
+  CompanyEditor,
+  AccessEditor,
+  FAQEditor,
+  ContactEditor,
 } from './EditorSections';
 import TranslationLoadingModal from './TranslationLoadingModal';
 
@@ -135,10 +140,20 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         return <GalleryEditor data={data} onUpdate={updateSectionData} />;
       case 'staff':
         return <StaffEditor data={data} onUpdate={updateSectionData} />;
+      case 'reviews':
+        return <ReviewsEditor data={data} onUpdate={updateSectionData} />;
       case 'news':
         return <NewsEditor data={data} onUpdate={updateSectionData} />;
       case 'storeInfo':
         return <StoreInfoEditor data={data} onUpdate={updateSectionData} />;
+      case 'company':
+        return <CompanyEditor data={data} onUpdate={updateSectionData} />;
+      case 'access':
+        return <AccessEditor data={data} onUpdate={updateSectionData} />;
+      case 'faq':
+        return <FAQEditor data={data} onUpdate={updateSectionData} />;
+      case 'contact':
+        return <ContactEditor data={data} onUpdate={updateSectionData} />;
       case 'cta':
         return <CTAEditor data={data} onUpdate={updateSectionData} />;
       case 'pricing':
