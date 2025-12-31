@@ -82,6 +82,45 @@ export async function saveSection(userId: string, section: string, data: any): P
   }
 }
 
+function mergeTranslationKeys(target: any, source: any): void {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+    return;
+  }
+
+  for (const key in source) {
+    if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
+      target[key] = source[key];
+    } else if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (!target[key]) {
+        target[key] = {};
+      }
+      mergeTranslationKeys(target[key], source[key]);
+    } else if (Array.isArray(source[key]) && Array.isArray(target[key])) {
+      for (let i = 0; i < Math.min(source[key].length, target[key].length); i++) {
+        if (source[key][i] && typeof source[key][i] === 'object') {
+          mergeTranslationKeys(target[key][i], source[key][i]);
+        }
+      }
+    }
+  }
+}
+
+function countTranslationKeys(obj: any, prefix: string = ''): number {
+  let count = 0;
+  if (!obj || typeof obj !== 'object') {
+    return 0;
+  }
+
+  for (const key in obj) {
+    if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
+      count++;
+    } else if (obj[key] && typeof obj[key] === 'object') {
+      count += countTranslationKeys(obj[key], prefix ? `${prefix}.${key}` : key);
+    }
+  }
+  return count;
+}
+
 export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
   try {
     console.log('=== Saving all sections ===');
@@ -96,29 +135,21 @@ export async function saveAllSections(userId: string, allSectionData: any): Prom
       contentToSave[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
     }
 
-    // 既存の翻訳データがあれば保持
+    // 既存の翻訳データがあれば保持（ネストされたキーも含む）
     if (existingData) {
-      console.log('Existing data found, preserving translation keys...');
+      console.log('Existing data found, preserving translation keys recursively...');
       for (const sectionName in existingData) {
         if (contentToSave[sectionName]) {
-          const existingSection = existingData[sectionName];
-          // 翻訳キー（_en, _zh, _ko で終わるキー）を抽出
-          for (const key in existingSection) {
-            if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
-              contentToSave[sectionName][key] = existingSection[key];
-            }
-          }
+          mergeTranslationKeys(contentToSave[sectionName], existingData[sectionName]);
         }
       }
 
       // 翻訳データが保持されたか確認
       let preservedTranslationKeys = 0;
       for (const sectionName in contentToSave) {
-        const keys = Object.keys(contentToSave[sectionName]);
-        const translationKeys = keys.filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko'));
-        preservedTranslationKeys += translationKeys.length;
+        preservedTranslationKeys += countTranslationKeys(contentToSave[sectionName]);
       }
-      console.log(`Preserved ${preservedTranslationKeys} translation keys from existing data`);
+      console.log(`Preserved ${preservedTranslationKeys} translation keys from existing data (including nested)`);
     } else {
       console.log('No existing data found, saving new data only');
     }
@@ -179,6 +210,31 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
   }
 }
 
+function normalizeMultilingualFields(data: any): any {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (typeof data === 'object' && !Array.isArray(data)) {
+    const keys = Object.keys(data);
+    if (keys.includes('ja') && (keys.includes('en') || keys.includes('ko') || keys.includes('zh-tw'))) {
+      return data.ja || data.en || data.ko || data['zh-tw'] || '';
+    }
+
+    const normalized: any = {};
+    for (const key in data) {
+      normalized[key] = normalizeMultilingualFields(data[key]);
+    }
+    return normalized;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => normalizeMultilingualFields(item));
+  }
+
+  return data;
+}
+
 export async function getSectionData(storeId: string): Promise<any | null> {
   try {
     const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
@@ -204,25 +260,34 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     console.log('result.ContentData exists:', !!result.ContentData);
     console.log('========================');
 
+    let contentData = null;
+
     // DynamoDB returns data in ContentData field
     if (result.ContentData) {
       console.log('✓ Returning ContentData from DynamoDB');
-      const contentData = result.ContentData;
+      contentData = result.ContentData;
       // Remove Status field as it's not part of section data
       if (contentData.Status) {
         delete contentData.Status;
       }
-      return contentData;
     } else if (result.content) {
-      return result.content;
+      contentData = result.content;
     } else if (result.Content) {
-      return result.Content;
+      contentData = result.Content;
     } else if (result.hero || result.about || result.menu) {
-      return result;
+      contentData = result;
     }
 
-    console.log('⚠ No valid data structure found in response');
-    return null;
+    if (!contentData) {
+      console.log('⚠ No valid data structure found in response');
+      return null;
+    }
+
+    console.log('Normalizing multilingual fields...');
+    const normalized = normalizeMultilingualFields(contentData);
+    console.log('✓ Multilingual fields normalized');
+
+    return normalized;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
@@ -537,7 +602,7 @@ export async function translateAndSave(
 
       // actualData は { header: {...}, hero: {...} } のような構造で、
       // 各セクション内に title_en, title_zh などの翻訳キーが含まれている
-      // これを直接 mergedContent にマージする
+      // これを再帰的に mergedContent にマージする
       for (const secName in actualData) {
         if (!mergedContent[secName]) {
           mergedContent[secName] = {};
@@ -546,14 +611,12 @@ export async function translateAndSave(
         const sectionData = actualData[secName];
         console.log(`  Merging section ${secName}, keys:`, Object.keys(sectionData).join(', '));
 
-        // 翻訳キー（_en, _zh, _ko）を含む全てのキーをマージ
-        for (const key in sectionData) {
-          mergedContent[secName][key] = JSON.parse(JSON.stringify(sectionData[key]));
-        }
+        // 翻訳キーを再帰的にマージ（ネストされたキーも含む）
+        mergeTranslationKeys(mergedContent[secName], sectionData);
 
         // デバッグ：マージ後のキーを確認
-        const translationKeys = Object.keys(mergedContent[secName]).filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
-        console.log(`    Translation keys in ${secName}: ${translationKeys.length} keys`);
+        const translationCount = countTranslationKeys(mergedContent[secName]);
+        console.log(`    Translation keys in ${secName}: ${translationCount} keys (including nested)`);
       }
 
       completedCount++;
@@ -575,12 +638,8 @@ export async function translateAndSave(
 
     // 各セクションのキーを表示（翻訳データが含まれているか確認）
     for (const sectionName in mergedContent) {
-      const keys = Object.keys(mergedContent[sectionName]);
-      const translationKeys = keys.filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
-      console.log(`  ${sectionName}: ${keys.length} keys total, ${translationKeys.length} translation keys`);
-      if (translationKeys.length > 0) {
-        console.log(`    Sample translation keys: ${translationKeys.slice(0, 5).join(', ')}`);
-      }
+      const translationCount = countTranslationKeys(mergedContent[sectionName]);
+      console.log(`  ${sectionName}: ${translationCount} translation keys (including nested)`);
     }
 
     // 保存データの検証
@@ -620,15 +679,13 @@ export async function translateAndSave(
     // 翻訳データが含まれているか最終確認
     let totalTranslationKeys = 0;
     for (const sectionName in savePayload.content) {
-      const keys = Object.keys(savePayload.content[sectionName]);
-      const translationKeys = keys.filter(k => k.includes('_en') || k.includes('_zh') || k.includes('_ko'));
-      totalTranslationKeys += translationKeys.length;
+      totalTranslationKeys += countTranslationKeys(savePayload.content[sectionName]);
     }
-    console.log(`  Total translation keys in payload: ${totalTranslationKeys}`);
+    console.log(`  Total translation keys in payload: ${totalTranslationKeys} (including nested)`);
     if (totalTranslationKeys === 0) {
       console.error('  ⚠️ WARNING: No translation data in payload!');
     } else {
-      console.log(`  ✓ Translation data confirmed (${totalTranslationKeys} keys)`);
+      console.log(`  ✓ Translation data confirmed (${totalTranslationKeys} keys including nested)`);
     }
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
