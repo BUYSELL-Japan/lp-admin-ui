@@ -23,6 +23,13 @@ const SETTINGS_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazona
 const CONTENT_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/get-content';
 const TRANSLATE_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/translate';
 
+// 有効なセクション名のリスト
+const VALID_SECTIONS = [
+  'header', 'hero', 'about', 'menu', 'pricing', 'cta',
+  'gallery', 'staff', 'reviews', 'news', 'storeInfo',
+  'company', 'access', 'faq', 'contact', 'footer'
+];
+
 export async function saveSiteData(userId: string, data: Partial<SiteData>): Promise<boolean> {
   try {
     if (!API_ENDPOINT) {
@@ -88,16 +95,36 @@ function mergeTranslationKeys(target: any, source: any): void {
   }
 
   for (const key in source) {
+    // 翻訳キー（_en, _zh, _ko）をマージ
     if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
       target[key] = source[key];
-    } else if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+    }
+    // 日本語の元データもコピー（翻訳キーでなく、オブジェクトや配列でもない場合）
+    else if (!key.endsWith('_en') && !key.endsWith('_zh') && !key.endsWith('_ko') &&
+             typeof source[key] !== 'object') {
+      if (!(key in target)) {
+        target[key] = source[key];
+      }
+    }
+    // ネストされたオブジェクトを再帰的に処理
+    else if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
       if (!target[key]) {
         target[key] = {};
       }
       mergeTranslationKeys(target[key], source[key]);
-    } else if (Array.isArray(source[key]) && Array.isArray(target[key])) {
-      for (let i = 0; i < Math.min(source[key].length, target[key].length); i++) {
+    }
+    // 配列を処理
+    else if (Array.isArray(source[key])) {
+      // targetに配列がない場合は作成
+      if (!Array.isArray(target[key])) {
+        target[key] = [];
+      }
+      // sourceの配列の長さに合わせてtargetを調整
+      for (let i = 0; i < source[key].length; i++) {
         if (source[key][i] && typeof source[key][i] === 'object') {
+          if (!target[key][i]) {
+            target[key][i] = {};
+          }
           mergeTranslationKeys(target[key][i], source[key][i]);
         }
       }
@@ -330,7 +357,17 @@ async function translateSection(
       throw new Error(`Failed to translate section: ${sectionName}`);
     }
 
-    return await translateResponse.json();
+    const response = await translateResponse.json();
+
+    // レスポンスから content 部分のみを取り出す
+    // レスポンス構造: { storeId, section, content: {...}, targetLanguages }
+    // content部分のみを返す
+    if (response.content) {
+      return response.content;
+    }
+
+    // フォールバック: content フィールドがない場合は全体を返す
+    return response;
   } catch (error) {
     if (retryCount < 3 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
       const waitTimes = [15000, 25000, 35000];
@@ -711,15 +748,20 @@ export async function translateAndSave(
   onProgress?: (current: number, total: number, sectionName: string) => void
 ): Promise<boolean> {
   try {
-    const sections = Object.keys(allSectionData);
+    // 有効なセクションのみをフィルタリング
+    const sections = Object.keys(allSectionData).filter(sectionName =>
+      VALID_SECTIONS.includes(sectionName)
+    );
+
     const mergedContent: any = {};
 
     console.log('Translating content with full serial processing...');
     console.log('Total sections to translate:', sections.length);
+    console.log('Valid sections:', sections.join(', '));
     console.log('All sections will be processed one by one to avoid API Gateway timeout');
 
-    // まずオリジナルの日本語データをベースにコピー
-    for (const sectionName in allSectionData) {
+    // まずオリジナルの日本語データをベースにコピー（有効なセクションのみ）
+    for (const sectionName of sections) {
       mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
     }
 
@@ -742,6 +784,12 @@ export async function translateAndSave(
       // 各セクション内に title_en, title_zh などの翻訳キーが含まれている
       // これを再帰的に mergedContent にマージする
       for (const secName in actualData) {
+        // 有効なセクション名のみ処理
+        if (!VALID_SECTIONS.includes(secName)) {
+          console.log(`  Skipping invalid section: ${secName}`);
+          continue;
+        }
+
         if (!mergedContent[secName]) {
           mergedContent[secName] = {};
         }
