@@ -19,58 +19,58 @@ import type {
 
 export const headerData: HeaderData = {
   logo: {
-    text: '琉球そば',
+    text: '[サンプル] 琉球そば',
   },
   navigation: [
-    { id: 'about', label: 'こだわり' },
-    { id: 'menu', label: 'お品書き' },
-    { id: 'pricing', label: 'コース・プラン' },
-    { id: 'gallery', label: 'ギャラリー' },
-    { id: 'staff', label: 'スタッフ' },
-    { id: 'reviews', label: 'お客様の声' },
-    { id: 'news', label: 'お知らせ' },
-    { id: 'company', label: '事業所概要' },
-    { id: 'access', label: 'アクセス' },
-    { id: 'faq', label: 'よくある質問' },
-    { id: 'contact', label: 'お問い合わせ' },
+    { id: 'about', label: '[サンプル] こだわり' },
+    { id: 'menu', label: '[サンプル] お品書き' },
+    { id: 'pricing', label: '[サンプル] コース・プラン' },
+    { id: 'gallery', label: '[サンプル] ギャラリー' },
+    { id: 'staff', label: '[サンプル] スタッフ' },
+    { id: 'reviews', label: '[サンプル] お客様の声' },
+    { id: 'news', label: '[サンプル] お知らせ' },
+    { id: 'company', label: '[サンプル] 事業所概要' },
+    { id: 'access', label: '[サンプル] アクセス' },
+    { id: 'faq', label: '[サンプル] よくある質問' },
+    { id: 'contact', label: '[サンプル] お問い合わせ' },
   ],
 };
 
 export const heroData: HeroData = {
-  title: '琉球の魂を\n一杯に込めて',
-  subtitle: '伝統の味わい、自家製麺へのこだわり',
+  title: '[サンプル] 琉球の魂を\n一杯に込めて',
+  subtitle: '[サンプル] 伝統の味わい、自家製麺へのこだわり',
   backgroundImage: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=1920&q=90',
 };
 
 export const aboutData: AboutData = {
-  sectionTitle: '私たちのこだわり',
+  sectionTitle: '[サンプル] 私たちのこだわり',
   features: [
     {
-      title: '伝統の味わい',
-      description: '創業以来守り続けてきた秘伝の出汁。鰹節と豚骨を丁寧に煮込み、沖縄の海の恵みを凝縮した深い味わいを実現しています。',
+      title: '[サンプル] 伝統の味わい',
+      description: '[サンプル] 創業以来守り続けてきた秘伝の出汁。鰹節と豚骨を丁寧に煮込み、沖縄の海の恵みを凝縮した深い味わいを実現しています。',
       image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80',
     },
     {
-      title: '自家製麺へのこだわり',
-      description: '毎朝手打ちする麺は、小麦の香りと独特のコシが特徴。職人が一本一本心を込めて打ち上げる麺が、スープと絶妙に絡み合います。',
+      title: '[サンプル] 自家製麺へのこだわり',
+      description: '[サンプル] 毎朝手打ちする麺は、小麦の香りと独特のコシが特徴。職人が一本一本心を込めて打ち上げる麺が、スープと絶妙に絡み合います。',
       image: 'https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?w=800&q=80',
     },
     {
-      title: '厳選された食材',
-      description: '地元沖縄の契約農家から直送される新鮮な野菜、厳選された豚肉。素材の良さが、そばの味を一層引き立てます。',
+      title: '[サンプル] 厳選された食材',
+      description: '[サンプル] 地元沖縄の契約農家から直送される新鮮な野菜、厳選された豚肉。素材の良さが、そばの味を一層引き立てます。',
       image: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=800&q=80',
     },
   ],
 };
 
 export const menuData: MenuData = {
-  sectionTitle: 'お品書き',
-  sectionSubtitle: '心を込めてお作りする、こだわりの一杯',
+  sectionTitle: '[サンプル] お品書き',
+  sectionSubtitle: '[サンプル] 心を込めてお作りする、こだわりの一杯',
   items: [
     {
-      name: '琉球そば',
+      name: '[サンプル] 琉球そば',
       price: '¥950',
-      description: '伝統の三枚肉と紅生姜が映える定番の一杯',
+      description: '[サンプル] 伝統の三枚肉と紅生姜が映える定番の一杯',
       image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=600&q=80',
     },
     {
@@ -179,51 +179,51 @@ export const menuData: MenuData = {
 };
 
 export const storeInfoData: StoreInfoData = {
-  sectionTitle: '店舗情報',
+  sectionTitle: '[サンプル] 店舗情報',
   items: [
     {
       icon: 'MapPin',
-      title: '所在地',
-      content: '沖縄県那覇市牧志1-2-3',
+      title: '[サンプル] 所在地',
+      content: '[サンプル] 沖縄県那覇市牧志1-2-3',
     },
     {
       icon: 'Clock',
-      title: '営業時間',
-      content: '11:00 - 21:00（ラストオーダー 20:30）',
+      title: '[サンプル] 営業時間',
+      content: '[サンプル] 11:00 - 21:00（ラストオーダー 20:30）',
     },
     {
       icon: 'Phone',
-      title: '電話番号',
-      content: '098-XXX-XXXX',
+      title: '[サンプル] 電話番号',
+      content: '[サンプル] 098-XXX-XXXX',
     },
     {
       icon: 'Mail',
-      title: 'メール',
-      content: 'info@ryukyu-soba.jp',
+      title: '[サンプル] メール',
+      content: '[サンプル] info@ryukyu-soba.jp',
     },
   ],
   mainImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80',
-  mainImageCaption: '温かみのある空間で、ごゆっくりとお過ごしください',
+  mainImageCaption: '[サンプル] 温かみのある空間で、ごゆっくりとお過ごしください',
 };
 
 export const contactData: ContactData = {
-  sectionTitle: 'お問い合わせ',
-  sectionSubtitle: 'ご予約やご質問など、お気軽にお問い合わせください',
+  sectionTitle: '[サンプル] お問い合わせ',
+  sectionSubtitle: '[サンプル] ご予約やご質問など、お気軽にお問い合わせください',
   fields: {
-    name: 'お名前',
-    email: 'メールアドレス',
-    subject: '件名',
-    message: 'お問い合わせ内容',
+    name: '[サンプル] お名前',
+    email: '[サンプル] メールアドレス',
+    subject: '[サンプル] 件名',
+    message: '[サンプル] お問い合わせ内容',
   },
-  submitButton: '送信する',
+  submitButton: '[サンプル] 送信する',
 };
 
 export const galleryData: GalleryData = {
-  sectionTitle: 'ギャラリー',
-  sectionSubtitle: '美味しさの瞬間を写真でお届け',
+  sectionTitle: '[サンプル] ギャラリー',
+  sectionSubtitle: '[サンプル] 美味しさの瞬間を写真でお届け',
   categories: ['すべて', '料理', '店内', 'イベント'],
   images: [
-    { url: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=800&q=80', caption: '伝統の琉球そば', category: '料理' },
+    { url: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=800&q=80', caption: '[サンプル] 伝統の琉球そば', category: '料理' },
     { url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80', caption: '自家製麺の調理風景', category: '料理' },
     { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80', caption: '温かみのある店内', category: '店内' },
     { url: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80', caption: 'カウンター席', category: '店内' },
@@ -236,13 +236,13 @@ export const galleryData: GalleryData = {
 };
 
 export const staffData: StaffData = {
-  sectionTitle: 'オーナー・スタッフ紹介',
-  sectionSubtitle: '心を込めてお迎えする、私たちのチーム',
+  sectionTitle: '[サンプル] オーナー・スタッフ紹介',
+  sectionSubtitle: '[サンプル] 心を込めてお迎えする、私たちのチーム',
   members: [
     {
-      name: '比嘉 太郎',
-      role: 'オーナー・料理長',
-      description: '沖縄そば一筋30年。祖父から受け継いだ伝統の味を守りながら、新しい挑戦も続けています。',
+      name: '[サンプル] 比嘉 太郎',
+      role: '[サンプル] オーナー・料理長',
+      description: '[サンプル] 沖縄そば一筋30年。祖父から受け継いだ伝統の味を守りながら、新しい挑戦も続けています。',
       image: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=600&q=80',
     },
     {
@@ -267,13 +267,13 @@ export const staffData: StaffData = {
 };
 
 export const reviewsData: ReviewsData = {
-  sectionTitle: 'お客様の声',
-  sectionSubtitle: 'たくさんの嬉しいお言葉をいただいています',
+  sectionTitle: '[サンプル] お客様の声',
+  sectionSubtitle: '[サンプル] たくさんの嬉しいお言葉をいただいています',
   reviews: [
     {
-      name: '田中 良太',
+      name: '[サンプル] 田中 良太',
       rating: 5,
-      comment: '沖縄旅行で訪れましたが、本当に美味しかったです！スープの味わいが深く、麺のコシも最高。また沖縄に来たら必ず立ち寄ります。',
+      comment: '[サンプル] 沖縄旅行で訪れましたが、本当に美味しかったです！スープの味わいが深く、麺のコシも最高。また沖縄に来たら必ず立ち寄ります。',
       date: '2024-11-15',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80',
     },
@@ -316,14 +316,14 @@ export const reviewsData: ReviewsData = {
 };
 
 export const newsData: NewsData = {
-  sectionTitle: '最新情報・お知らせ',
-  sectionSubtitle: 'お店の最新情報をお届けします',
+  sectionTitle: '[サンプル] 最新情報・お知らせ',
+  sectionSubtitle: '[サンプル] お店の最新情報をお届けします',
   items: [
     {
       date: '2024-12-01',
-      category: 'お知らせ',
-      title: '年末年始の営業時間のご案内',
-      content: '12月31日は15時まで、1月1日は休業、1月2日から通常営業いたします。',
+      category: '[サンプル] お知らせ',
+      title: '[サンプル] 年末年始の営業時間のご案内',
+      content: '[サンプル] 12月31日は15時まで、1月1日は休業、1月2日から通常営業いたします。',
     },
     {
       date: '2024-11-20',
@@ -353,18 +353,18 @@ export const newsData: NewsData = {
 };
 
 export const accessData: AccessData = {
-  sectionTitle: 'アクセス・駐車場',
-  sectionSubtitle: 'お店への行き方をご案内します',
-  address: '沖縄県那覇市牧志1-2-3',
+  sectionTitle: '[サンプル] アクセス・駐車場',
+  sectionSubtitle: '[サンプル] お店への行き方をご案内します',
+  address: '[サンプル] 沖縄県那覇市牧志1-2-3',
   mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3579.1447437301044!2d127.68589831501648!3d26.21424098342371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34e56bd0b4a42ff1%3A0x36812e0e598f7d6b!2z54CP6Yar!5e0!3m2!1sja!2sjp!4v1234567890123!5m2!1sja!2sjp',
   parking: {
-    title: '駐車場のご案内',
-    description: '店舗専用駐車場を完備しています',
-    spaces: '10台',
-    notes: '満車の際は近隣のコインパーキングをご利用ください（徒歩2分圏内に3箇所あり）',
+    title: '[サンプル] 駐車場のご案内',
+    description: '[サンプル] 店舗専用駐車場を完備しています',
+    spaces: '[サンプル] 10台',
+    notes: '[サンプル] 満車の際は近隣のコインパーキングをご利用ください（徒歩2分圏内に3箇所あり）',
   },
   transportation: {
-    title: '公共交通機関でのアクセス',
+    title: '[サンプル] 公共交通機関でのアクセス',
     methods: [
       { type: 'ゆいレール', description: '牧志駅から徒歩5分' },
       { type: 'バス', description: '「牧志」バス停から徒歩3分（系統：1番、3番、5番）' },
@@ -374,9 +374,9 @@ export const accessData: AccessData = {
 };
 
 export const ctaData: CTAData = {
-  sectionTitle: 'ご予約・お問い合わせ',
-  sectionSubtitle: '心よりお待ちしております',
-  description: '本格的な琉球そばを味わいに、ぜひお越しください。ご予約やご質問など、お気軽にお問い合わせください。',
+  sectionTitle: '[サンプル] ご予約・お問い合わせ',
+  sectionSubtitle: '[サンプル] 心よりお待ちしております',
+  description: '[サンプル] 本格的な琉球そばを味わいに、ぜひお越しください。ご予約やご質問など、お気軽にお問い合わせください。',
   buttons: [
     { text: 'お電話でご予約', link: '#contact', type: 'primary' },
     { text: 'お問い合わせ', link: '#contact', type: 'secondary' },
@@ -385,12 +385,12 @@ export const ctaData: CTAData = {
 };
 
 export const pricingData: PricingData = {
-  sectionTitle: 'コース・プラン',
-  sectionSubtitle: 'お好みに合わせた各種プランをご用意',
+  sectionTitle: '[サンプル] コース・プラン',
+  sectionSubtitle: '[サンプル] お好みに合わせた各種プランをご用意',
   plans: [
     {
-      name: 'スタンダードコース',
-      description: 'お一人様でも気軽にお楽しみいただけるコース',
+      name: '[サンプル] スタンダードコース',
+      description: '[サンプル] お一人様でも気軽にお楽しみいただけるコース',
       price: '1,500円',
       features: [
         '琉球そば（標準）',
@@ -434,14 +434,14 @@ export const pricingData: PricingData = {
 };
 
 export const companyData: CompanyData = {
-  sectionTitle: '事業所概要',
-  sectionSubtitle: '伝統を守り、未来へつなぐ',
+  sectionTitle: '[サンプル] 事業所概要',
+  sectionSubtitle: '[サンプル] 伝統を守り、未来へつなぐ',
   philosophy: {
-    title: '経営理念',
-    content: '沖縄の豊かな食文化と伝統の味を次世代へ継承し、地域に愛される店づくりを通じて、お客様の心と体に温かさと幸せをお届けすることを使命としています。素材へのこだわり、手作りの温もり、そして真心を込めた接客で、琉球そばの魅力を国内外に発信し続けます。',
+    title: '[サンプル] 経営理念',
+    content: '[サンプル] 沖縄の豊かな食文化と伝統の味を次世代へ継承し、地域に愛される店づくりを通じて、お客様の心と体に温かさと幸せをお届けすることを使命としています。素材へのこだわり、手作りの温もり、そして真心を込めた接客で、琉球そばの魅力を国内外に発信し続けます。',
   },
   history: {
-    title: '沿革',
+    title: '[サンプル] 沿革',
     timeline: [
       { year: '2014年', event: '那覇市牧志に「琉球そば」を創業' },
       { year: '2016年', event: '自家製麺工房を併設、完全手打ち麺の提供開始' },
@@ -452,9 +452,9 @@ export const companyData: CompanyData = {
     ],
   },
   companyInfo: {
-    title: '会社情報',
+    title: '[サンプル] 会社情報',
     items: [
-      { label: '屋号', value: '琉球そば' },
+      { label: '[サンプル] 屋号', value: '[サンプル] 琉球そば' },
       { label: '創業', value: '2014年4月' },
       { label: '代表', value: '比嘉 太郎' },
       { label: '所在地', value: '沖縄県那覇市牧志1-2-3' },
@@ -467,12 +467,12 @@ export const companyData: CompanyData = {
 };
 
 export const faqData: FAQData = {
-  sectionTitle: 'よくあるご質問',
-  sectionSubtitle: 'お客様からよく寄せられる質問にお答えします',
+  sectionTitle: '[サンプル] よくあるご質問',
+  sectionSubtitle: '[サンプル] お客様からよく寄せられる質問にお答えします',
   items: [
     {
-      question: '予約は必要ですか？',
-      answer: '平日のランチタイムは比較的空いていますが、週末や祝日は混雑が予想されますので、お電話でのご予約をおすすめします。特に4名様以上の場合は事前にご連絡いただけるとスムーズです。',
+      question: '[サンプル] 予約は必要ですか？',
+      answer: '[サンプル] 平日のランチタイムは比較的空いていますが、週末や祝日は混雑が予想されますので、お電話でのご予約をおすすめします。特に4名様以上の場合は事前にご連絡いただけるとスムーズです。',
     },
     {
       question: '子供連れでも大丈夫ですか？',
@@ -506,21 +506,21 @@ export const faqData: FAQData = {
 };
 
 export const footerData: FooterData = {
-  logo: '琉球そば',
-  description: '沖縄の伝統と心を大切に、\n真心込めた一杯をお届けします。',
+  logo: '[サンプル] 琉球そば',
+  description: '[サンプル] 沖縄の伝統と心を大切に、\n真心込めた一杯をお届けします。',
   businessHours: {
-    title: '営業時間',
-    days: '月曜日 - 日曜日',
-    hours: '11:00 - 21:00',
-    closedDay: '定休日: 火曜日',
+    title: '[サンプル] 営業時間',
+    days: '[サンプル] 月曜日 - 日曜日',
+    hours: '[サンプル] 11:00 - 21:00',
+    closedDay: '[サンプル] 定休日: 火曜日',
   },
   social: {
-    title: 'SNSでフォロー',
+    title: '[サンプル] SNSでフォロー',
     links: [
       { platform: 'Facebook', url: '#' },
       { platform: 'Instagram', url: '#' },
       { platform: 'Twitter', url: '#' },
     ],
   },
-  copyright: '琉球そば. All rights reserved.',
+  copyright: '[サンプル] 琉球そば. All rights reserved.',
 };
