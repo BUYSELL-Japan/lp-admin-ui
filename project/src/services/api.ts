@@ -520,6 +520,68 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
   return mergedResult;
 }
 
+async function translateReviewsSection(userId: string, reviewsContent: any): Promise<any> {
+  console.log('\n=== Translating reviews section with one-by-one review processing ===');
+
+  const reviews = reviewsContent.reviews || [];
+  if (reviews.length === 0) {
+    console.log('  No reviews found, translating entire reviews section');
+    return translateSection(userId, 'reviews', reviewsContent);
+  }
+
+  console.log(`  Total reviews to translate: ${reviews.length}`);
+
+  const mergedResult: any = { reviews: { reviews: [] } };
+
+  let isFirstReview = true;
+
+  for (let i = 0; i < reviews.length; i++) {
+    console.log(`\n  [${i + 1}/${reviews.length}] Translating review from: "${reviews[i].name}"...`);
+
+    const singleReviewContent = {
+      ...reviewsContent,
+      reviews: [reviews[i]],
+    };
+
+    try {
+      const reviewResult = await translateSection(userId, 'reviews', singleReviewContent);
+
+      if (reviewResult.reviews) {
+        if (isFirstReview) {
+          for (const key in reviewResult.reviews) {
+            if (key !== 'reviews') {
+              mergedResult.reviews[key] = reviewResult.reviews[key];
+            }
+          }
+          console.log(`  ✓ Initialized reviews fields:`, Object.keys(mergedResult.reviews).filter(k => k !== 'reviews').join(', '));
+          isFirstReview = false;
+        }
+
+        if (reviewResult.reviews.reviews && Array.isArray(reviewResult.reviews.reviews)) {
+          mergedResult.reviews.reviews.push(...reviewResult.reviews.reviews);
+          console.log(`  ✓ Added review (total: ${mergedResult.reviews.reviews.length}/${reviews.length})`);
+        } else {
+          console.warn(`  ⚠ No reviews array in result`);
+        }
+      } else {
+        console.warn(`  ⚠ Unexpected structure from translateSection for reviews ${i + 1}`);
+        console.warn(`  Available keys:`, Object.keys(reviewResult).join(', '));
+      }
+
+      if (i < reviews.length - 1) {
+        console.log('  Waiting 5s before next review...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to translate review ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  console.log(`\n  ✓ Reviews section completed`);
+  return mergedResult;
+}
+
 async function translateArraySectionOneByOne(
   userId: string,
   sectionName: string,
@@ -610,6 +672,11 @@ async function translateSectionInBatches(
   if (sectionName === 'staff') {
     console.log(`${sectionName}: Using specialized staff translation function`);
     return translateStaffSection(userId, sectionContent);
+  }
+
+  if (sectionName === 'reviews') {
+    console.log(`${sectionName}: Using specialized reviews translation function`);
+    return translateReviewsSection(userId, sectionContent);
   }
 
   let BATCH_SIZE = 4;
