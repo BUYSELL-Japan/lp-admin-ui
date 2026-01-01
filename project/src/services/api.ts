@@ -377,15 +377,16 @@ async function translateSection(
 
     console.log(`  Raw API response keys for ${sectionName}:`, Object.keys(response).join(', '));
 
+    let extractedContent: any = null;
+
     // レスポンスから content 部分のみを取り出す
     // レスポンス構造: { storeId, section, content: {...}, targetLanguages }
     if (response.content && typeof response.content === 'object') {
       console.log(`  Extracted content keys for ${sectionName}:`, Object.keys(response.content).join(', '));
-      return response.content;
+      extractedContent = response.content;
     }
-
     // レスポンスにメタデータフィールドが含まれている場合は除外
-    if (response.storeId || response.section || response.targetLanguages) {
+    else if (response.storeId || response.section || response.targetLanguages) {
       console.warn(`  API response contains metadata fields. Attempting to extract content for ${sectionName}`);
       // メタデータフィールドを除外してコンテンツのみを返す
       const contentOnly: any = {};
@@ -396,13 +397,28 @@ async function translateSection(
       }
       if (Object.keys(contentOnly).length > 0) {
         console.log(`  Extracted content keys (fallback) for ${sectionName}:`, Object.keys(contentOnly).join(', '));
-        return contentOnly;
+        extractedContent = contentOnly;
       }
     }
-
     // 最終フォールバック
-    console.log(`  Using entire response for ${sectionName}`);
-    return response;
+    else {
+      console.log(`  Using entire response for ${sectionName}`);
+      extractedContent = response;
+    }
+
+    // 確実に { [sectionName]: {...} } の構造を返す
+    if (extractedContent && extractedContent[sectionName]) {
+      console.log(`  ✓ Response has correct structure: { ${sectionName}: {...} }`);
+      return extractedContent;
+    } else if (extractedContent) {
+      // セクション名でラップされていない場合は、ラップして返す
+      console.warn(`  ⚠ Response missing section wrapper, wrapping as { ${sectionName}: {...} }`);
+      return { [sectionName]: extractedContent };
+    }
+
+    // エラーケース
+    console.error(`  ✗ Could not extract valid content for ${sectionName}`);
+    throw new Error(`Invalid response structure for section: ${sectionName}`);
   } catch (error) {
     if (retryCount < 3 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
       const waitTimes = [15000, 25000, 35000];
@@ -446,52 +462,61 @@ async function translateCompanySection(
   userId: string,
   companyContent: any
 ): Promise<any> {
-  console.log('Translating company section with field-level splitting...');
+  console.log('\n=== Translating company section with field-level splitting ===');
 
   const parts: Array<{ name: string; content: any }> = [];
 
   if (companyContent.philosophy) {
     parts.push({ name: 'company.philosophy', content: { philosophy: companyContent.philosophy } });
+    console.log('  ✓ Added philosophy part');
   }
 
   if (companyContent.history?.timeline && Array.isArray(companyContent.history.timeline)) {
     parts.push({ name: 'company.history', content: { history: companyContent.history } });
+    console.log(`  ✓ Added history part (${companyContent.history.timeline.length} timeline items)`);
   }
 
   if (companyContent.companyInfo) {
     parts.push({ name: 'company.companyInfo', content: { companyInfo: companyContent.companyInfo } });
+    const itemCount = companyContent.companyInfo.items?.length || 0;
+    console.log(`  ✓ Added companyInfo part (${itemCount} info items)`);
   }
 
   if (parts.length === 0) {
+    console.log('  No parts to split, translating entire company section');
     return translateSection(userId, 'company', companyContent);
   }
 
-  console.log(`Splitting company into ${parts.length} parts: ${parts.map(p => p.name).join(', ')}`);
+  console.log(`  Total parts to translate: ${parts.length}`);
 
   const mergedResult: any = { company: {} };
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
-    console.log(`Translating ${part.name} (${i + 1}/${parts.length})`);
+    console.log(`\n  [${i + 1}/${parts.length}] Translating ${part.name}...`);
 
     const partResult = await translateSection(userId, 'company', part.content);
 
     // partResult は { company: {...} } という構造を期待
     if (partResult.company) {
-      // companyオブジェクトをマージ
+      const keysBefore = Object.keys(mergedResult.company).length;
       Object.assign(mergedResult.company, partResult.company);
+      const keysAfter = Object.keys(mergedResult.company).length;
+      console.log(`  ✓ Merged ${part.name}: ${keysBefore} -> ${keysAfter} keys`);
     } else {
-      console.warn(`Unexpected structure from translateSection for ${part.name}`);
+      console.warn(`  ⚠ Unexpected structure from translateSection for ${part.name}`);
+      console.warn(`  Available keys:`, Object.keys(partResult).join(', '));
       Object.assign(mergedResult.company, partResult);
     }
 
     if (i < parts.length - 1) {
-      console.log('Waiting 5s before next company part...');
+      console.log('  Waiting 5s before next company part...');
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 
-  console.log('Company section parts merged successfully');
+  const translationCount = countTranslationKeys(mergedResult.company);
+  console.log(`\n  ✓ Company section completed: ${translationCount} translation keys`);
   return mergedResult;
 }
 
@@ -499,14 +524,15 @@ async function translatePricingSection(
   userId: string,
   pricingContent: any
 ): Promise<any> {
-  console.log('Translating pricing section with one-by-one plan processing...');
+  console.log('\n=== Translating pricing section with one-by-one plan processing ===');
 
   const plans = pricingContent.plans || [];
   if (plans.length === 0) {
+    console.log('  No plans found, translating entire pricing section');
     return translateSection(userId, 'pricing', pricingContent);
   }
 
-  console.log(`Pricing has ${plans.length} plans, will process one by one`);
+  console.log(`  Total plans to translate: ${plans.length}`);
 
   const mergedResult: any = { pricing: { plans: [] } };
 
@@ -514,7 +540,8 @@ async function translatePricingSection(
   let isFirstPlan = true;
 
   for (let i = 0; i < plans.length; i++) {
-    console.log(`Translating pricing plan ${i + 1}/${plans.length} (${plans[i].features?.length || 0} features)...`);
+    const featureCount = plans[i].features?.length || 0;
+    console.log(`\n  [${i + 1}/${plans.length}] Translating plan: "${plans[i].name}" (${featureCount} features)...`);
 
     const singlePlanContent = {
       ...pricingContent,
@@ -532,36 +559,43 @@ async function translatePricingSection(
             mergedResult.pricing[key] = planResult.pricing[key];
           }
         }
+        console.log(`  ✓ Initialized pricing fields:`, Object.keys(mergedResult.pricing).filter(k => k !== 'plans').join(', '));
         isFirstPlan = false;
       }
 
       // plansをマージ
       if (planResult.pricing.plans && Array.isArray(planResult.pricing.plans)) {
         mergedResult.pricing.plans.push(...planResult.pricing.plans);
+        console.log(`  ✓ Added plan (total: ${mergedResult.pricing.plans.length}/${plans.length})`);
+      } else {
+        console.warn(`  ⚠ No plans array in result`);
       }
     } else {
-      console.warn(`Unexpected structure from translateSection for pricing plan ${i + 1}`);
+      console.warn(`  ⚠ Unexpected structure from translateSection for pricing plan ${i + 1}`);
+      console.warn(`  Available keys:`, Object.keys(planResult).join(', '));
     }
 
     if (i < plans.length - 1) {
-      console.log('Waiting 5s before next pricing plan...');
+      console.log('  Waiting 5s before next pricing plan...');
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 
-  console.log('Pricing section plans merged successfully');
+  const translationCount = countTranslationKeys(mergedResult.pricing);
+  console.log(`\n  ✓ Pricing section completed: ${translationCount} translation keys`);
   return mergedResult;
 }
 
 async function translateStaffSection(userId: string, staffContent: any): Promise<any> {
-  console.log('Translating staff section with one-by-one member processing...');
+  console.log('\n=== Translating staff section with one-by-one member processing ===');
 
   const members = staffContent.members || [];
   if (members.length === 0) {
+    console.log('  No members found, translating entire staff section');
     return translateSection(userId, 'staff', staffContent);
   }
 
-  console.log(`Staff has ${members.length} members, will process one by one to avoid timeouts`);
+  console.log(`  Total members to translate: ${members.length}`);
 
   const mergedResult: any = { staff: { members: [] } };
 
@@ -569,7 +603,7 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
   let isFirstMember = true;
 
   for (let i = 0; i < members.length; i++) {
-    console.log(`Translating staff member ${i + 1}/${members.length}...`);
+    console.log(`\n  [${i + 1}/${members.length}] Translating member: "${members[i].name}"...`);
 
     const singleMemberContent = {
       ...staffContent,
@@ -588,28 +622,34 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
               mergedResult.staff[key] = memberResult.staff[key];
             }
           }
+          console.log(`  ✓ Initialized staff fields:`, Object.keys(mergedResult.staff).filter(k => k !== 'members').join(', '));
           isFirstMember = false;
         }
 
         // membersをマージ
         if (memberResult.staff.members && Array.isArray(memberResult.staff.members)) {
           mergedResult.staff.members.push(...memberResult.staff.members);
+          console.log(`  ✓ Added member (total: ${mergedResult.staff.members.length}/${members.length})`);
+        } else {
+          console.warn(`  ⚠ No members array in result`);
         }
       } else {
-        console.warn(`Unexpected structure from translateSection for staff member ${i + 1}`);
+        console.warn(`  ⚠ Unexpected structure from translateSection for staff member ${i + 1}`);
+        console.warn(`  Available keys:`, Object.keys(memberResult).join(', '));
       }
 
       if (i < members.length - 1) {
-        console.log('Waiting 5s before next staff member...');
+        console.log('  Waiting 5s before next staff member...');
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     } catch (error) {
-      console.error(`Failed to translate staff member ${i + 1}:`, error);
+      console.error(`  ✗ Failed to translate staff member ${i + 1}:`, error);
       throw error;
     }
   }
 
-  console.log('Staff section members merged successfully');
+  const translationCount = countTranslationKeys(mergedResult.staff);
+  console.log(`\n  ✓ Staff section completed: ${translationCount} translation keys`);
   return mergedResult;
 }
 
@@ -620,7 +660,8 @@ async function translateArraySectionOneByOne(
   mainArrayField: string,
   items: any[]
 ): Promise<any> {
-  console.log(`${sectionName}: Processing ${items.length} items one by one due to timeout prevention`);
+  console.log(`\n=== ${sectionName}: Processing ${items.length} items one-by-one ===`);
+  console.log(`  Array field: ${mainArrayField}`);
 
   const mergedResult: any = {};
   mergedResult[sectionName] = JSON.parse(JSON.stringify(sectionContent));
@@ -629,7 +670,7 @@ async function translateArraySectionOneByOne(
   let isFirstItem = true;
 
   for (let i = 0; i < items.length; i++) {
-    console.log(`${sectionName}: Translating item ${i + 1}/${items.length}...`);
+    console.log(`\n  [${i + 1}/${items.length}] Translating item...`);
 
     const singleItemContent = JSON.parse(JSON.stringify(sectionContent));
     setNestedValue(singleItemContent, mainArrayField, [items[i]]);
@@ -642,10 +683,11 @@ async function translateArraySectionOneByOne(
         // 最初のアイテムでは、セクション全体のフィールドをコピー（配列以外）
         if (isFirstItem) {
           for (const key in itemResult[sectionName]) {
-            if (key !== mainArrayField) {
+            if (key !== mainArrayField.split('.')[0]) {
               mergedResult[sectionName][key] = itemResult[sectionName][key];
             }
           }
+          console.log(`  ✓ Initialized fields:`, Object.keys(mergedResult[sectionName]).filter(k => k !== mainArrayField.split('.')[0]).join(', '));
           isFirstItem = false;
         }
 
@@ -655,23 +697,30 @@ async function translateArraySectionOneByOne(
           const targetArray = getNestedValue(mergedResult[sectionName], mainArrayField);
           if (targetArray && Array.isArray(targetArray)) {
             targetArray.push(...itemArray);
+            console.log(`  ✓ Added item (total: ${targetArray.length}/${items.length})`);
+          } else {
+            console.warn(`  ⚠ Target array not found at ${mainArrayField}`);
           }
+        } else {
+          console.warn(`  ⚠ Item array not found in result`);
         }
       } else {
-        console.warn(`Unexpected structure from translateSection for ${sectionName} item ${i + 1}`);
+        console.warn(`  ⚠ Unexpected structure from translateSection for ${sectionName} item ${i + 1}`);
+        console.warn(`  Available keys:`, Object.keys(itemResult).join(', '));
       }
 
       if (i < items.length - 1) {
-        console.log('Waiting 5s before next item...');
+        console.log('  Waiting 5s before next item...');
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     } catch (error) {
-      console.error(`${sectionName}: Failed to translate item ${i + 1}:`, error);
+      console.error(`  ✗ ${sectionName}: Failed to translate item ${i + 1}:`, error);
       throw error;
     }
   }
 
-  console.log(`${sectionName}: All items merged successfully`);
+  const translationCount = countTranslationKeys(mergedResult[sectionName]);
+  console.log(`\n  ✓ ${sectionName}: All items merged successfully (${translationCount} translation keys)`);
   return mergedResult;
 }
 
@@ -680,15 +729,20 @@ async function translateSectionInBatches(
   sectionName: string,
   sectionContent: any
 ): Promise<any> {
+  console.log(`\n=== translateSectionInBatches: ${sectionName} ===`);
+
   if (sectionName === 'company') {
+    console.log(`${sectionName}: Using specialized company translation function`);
     return translateCompanySection(userId, sectionContent);
   }
 
   if (sectionName === 'pricing') {
+    console.log(`${sectionName}: Using specialized pricing translation function`);
     return translatePricingSection(userId, sectionContent);
   }
 
   if (sectionName === 'staff') {
+    console.log(`${sectionName}: Using specialized staff translation function`);
     return translateStaffSection(userId, sectionContent);
   }
 
@@ -702,7 +756,7 @@ async function translateSectionInBatches(
     return translateSection(userId, sectionName, sectionContent);
   }
 
-  console.log(`${sectionName}: Detected array fields: ${arrayFields.join(', ')}`);
+  console.log(`${sectionName}: Using array field for batch processing: ${arrayFields[0]}`);
   const mainArrayField = arrayFields[0];
   const items = getNestedValue(sectionContent, mainArrayField);
 
@@ -864,20 +918,34 @@ export async function translateAndSave(
       // actualData が { [sectionName]: {...} } の形式の場合、その中身を取り出す
       // 例: { hero: { title: "...", title_en: "...", ... } }
       if (actualData[sectionName] && typeof actualData[sectionName] === 'object') {
-        console.log(`  Direct section match found for ${sectionName}`);
+        console.log(`  ✓ Direct section match found for ${sectionName}`);
         const sectionData = actualData[sectionName];
-        console.log(`  Merging section ${sectionName}, keys:`, Object.keys(sectionData).join(', '));
+
+        // マージ前の翻訳キー数
+        const beforeCount = countTranslationKeys(mergedContent[sectionName]);
+        console.log(`  Before merge: ${beforeCount} translation keys in ${sectionName}`);
+        console.log(`  Merging data with keys:`, Object.keys(sectionData).slice(0, 10).join(', '), Object.keys(sectionData).length > 10 ? '...' : '');
 
         // 翻訳キーを再帰的にマージ（ネストされたキーも含む）
         mergeTranslationKeys(mergedContent[sectionName], sectionData);
 
-        // デバッグ：マージ後のキーを確認
-        const translationCount = countTranslationKeys(mergedContent[sectionName]);
-        console.log(`    Translation keys in ${sectionName}: ${translationCount} keys (including nested)`);
+        // マージ後の翻訳キー数
+        const afterCount = countTranslationKeys(mergedContent[sectionName]);
+        const addedCount = afterCount - beforeCount;
+        console.log(`  After merge: ${afterCount} translation keys (added ${addedCount} keys)`);
+
+        if (addedCount === 0) {
+          console.warn(`  ⚠ WARNING: No translation keys were added for ${sectionName}!`);
+          console.warn(`  Source data keys:`, Object.keys(sectionData).join(', '));
+          console.warn(`  Checking for translation keys in source:`,
+            Object.keys(sectionData).filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko')).join(', ') || 'NONE FOUND');
+        }
       }
       // actualData が複数セクションを含む場合（バッチ処理の結果など）
       else {
         console.log(`  Processing multiple sections from response`);
+        let hasValidSections = false;
+
         for (const secName in actualData) {
           // 有効なセクション名のみ処理
           if (!VALID_SECTIONS.includes(secName)) {
@@ -885,19 +953,35 @@ export async function translateAndSave(
             continue;
           }
 
+          hasValidSections = true;
+
           if (!mergedContent[secName]) {
             mergedContent[secName] = {};
           }
 
           const sectionData = actualData[secName];
-          console.log(`  Merging section ${secName}, keys:`, Object.keys(sectionData).join(', '));
+
+          // マージ前の翻訳キー数
+          const beforeCount = countTranslationKeys(mergedContent[secName]);
+          console.log(`  Before merge: ${beforeCount} translation keys in ${secName}`);
+          console.log(`  Merging section ${secName}, keys:`, Object.keys(sectionData).slice(0, 10).join(', '), Object.keys(sectionData).length > 10 ? '...' : '');
 
           // 翻訳キーを再帰的にマージ（ネストされたキーも含む）
           mergeTranslationKeys(mergedContent[secName], sectionData);
 
-          // デバッグ：マージ後のキーを確認
-          const translationCount = countTranslationKeys(mergedContent[secName]);
-          console.log(`    Translation keys in ${secName}: ${translationCount} keys (including nested)`);
+          // マージ後の翻訳キー数
+          const afterCount = countTranslationKeys(mergedContent[secName]);
+          const addedCount = afterCount - beforeCount;
+          console.log(`  After merge: ${afterCount} translation keys (added ${addedCount} keys)`);
+
+          if (addedCount === 0) {
+            console.warn(`  ⚠ WARNING: No translation keys were added for ${secName}!`);
+          }
+        }
+
+        if (!hasValidSections) {
+          console.error(`  ✗ ERROR: No valid sections found in response for ${sectionName}!`);
+          console.error(`  Available keys:`, Object.keys(actualData).join(', '));
         }
       }
 
