@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Waves, Menu, X, LogIn, LogOut, User } from 'lucide-react';
-import { headerData } from '../data/content';
 import { clearAuthData, getUserEmail } from '../services/auth';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
+import LanguageSelector from './LanguageSelector';
 
 const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
 interface HeaderProps {
+  data: any;
   isAuthenticated?: boolean;
 }
 
-export default function Header({ isAuthenticated = false }: HeaderProps) {
+export default function Header({ data, isAuthenticated = false }: HeaderProps) {
+  const { currentLang } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userEmail = getUserEmail();
@@ -58,12 +62,12 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
             >
               <Waves className={`w-8 h-8 ${scrolled || mobileMenuOpen ? 'text-teal-600' : 'text-white'}`} />
               <span className={`text-2xl font-bold ${scrolled || mobileMenuOpen ? 'text-gray-900' : 'text-white'}`}>
-                {headerData.logo.text}
+                {getText(data?.logo?.text, currentLang)}
               </span>
             </motion.div>
 
             <nav className="hidden md:flex items-center gap-6">
-              {headerData.navigation.map((item) => (
+              {(data?.navigation || []).map((item: any) => (
                 <motion.button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
@@ -75,9 +79,12 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                   whileHover={{ y: -2 }}
                   whileTap={{ y: 0 }}
                 >
-                  {item.label}
+                  {getText(item.label, currentLang)}
                 </motion.button>
               ))}
+              <div className={scrolled ? 'text-gray-700' : 'text-white'}>
+                <LanguageSelector />
+              </div>
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
@@ -99,7 +106,7 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                     whileTap={{ scale: 0.95 }}
                   >
                     <LogOut className="w-4 h-4" />
-                    ログアウト
+                    {getText(data?.logoutButton, currentLang)}
                   </motion.button>
                 </div>
               ) : (
@@ -116,7 +123,7 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                     }`}
                   >
                     <LogIn className="w-4 h-4" />
-                    ログイン
+                    {getText(data?.loginButton, currentLang)}
                   </a>
                 </motion.div>
               )}
@@ -151,7 +158,7 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
               <div className="px-4 py-6 space-y-1">
-                {headerData.navigation.map((item, index) => (
+                {(data?.navigation || []).map((item: any, index: number) => (
                   <motion.button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
@@ -161,7 +168,7 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {item.label}
+                    {getText(item.label, currentLang)}
                   </motion.button>
                 ))}
                 {isAuthenticated ? (
@@ -170,7 +177,7 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                       className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-gray-100 text-gray-900 rounded-xl"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
+                      transition={{ duration: 0.3, delay: (data?.navigation || []).length * 0.05 }}
                     >
                       <User className="w-5 h-5" />
                       <span className="text-sm font-medium">{userEmail}</span>
@@ -180,11 +187,11 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                       className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-2 bg-gray-600 text-white rounded-xl font-medium hover:bg-gray-700 transition-colors"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: (headerData.navigation.length + 1) * 0.05 }}
+                      transition={{ duration: 0.3, delay: ((data?.navigation || []).length + 1) * 0.05 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <LogOut className="w-5 h-5" />
-                      ログアウト
+                      {getText(data?.logoutButton, currentLang)}
                     </motion.button>
                   </>
                 ) : (
@@ -193,11 +200,11 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
                     className="flex items-center justify-center gap-2 w-full px-4 py-4 mt-4 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: headerData.navigation.length * 0.05 }}
+                    transition={{ duration: 0.3, delay: (data?.navigation || []).length * 0.05 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <LogIn className="w-5 h-5" />
-                    ログイン
+                    {getText(data?.loginButton, currentLang)}
                   </motion.a>
                 )}
               </div>

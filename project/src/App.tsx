@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, Edit } from 'lucide-react';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
+import { LanguageProvider } from './contexts/LanguageContext';
 import {
   exchangeCodeForTokens,
   getStoreIdFromToken,
@@ -179,42 +180,44 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="md:hidden fixed bottom-4 right-4 z-50">
-        <button
-          onClick={handlePreviewToggle}
-          className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          {showPreview ? (
-            <>
-              <Edit size={20} />
-              <span>編集</span>
-            </>
-          ) : (
-            <>
-              <Eye size={20} />
-              <span>プレビュー</span>
-            </>
-          )}
-        </button>
-      </div>
+    <LanguageProvider>
+      <div className="min-h-screen bg-gray-100">
+        <div className="md:hidden fixed bottom-4 right-4 z-50">
+          <button
+            onClick={handlePreviewToggle}
+            className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            {showPreview ? (
+              <>
+                <Edit size={20} />
+                <span>編集</span>
+              </>
+            ) : (
+              <>
+                <Eye size={20} />
+                <span>プレビュー</span>
+              </>
+            )}
+          </button>
+        </div>
 
-      <div className="flex h-screen">
-        <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
-          <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
-        </div>
-        <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block`}>
-          <Editor
-            userId={userId}
-            sectionData={sectionData}
-            onSectionChange={handleSectionChange}
-            isAuthenticated={!!userId}
-            isAuthenticating={isAuthenticating}
-            onSubdomainFetched={handleSubdomainFetched}
-          />
+        <div className="flex h-screen">
+          <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
+            <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
+          </div>
+          <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block`}>
+            <Editor
+              userId={userId}
+              sectionData={sectionData}
+              onSectionChange={handleSectionChange}
+              isAuthenticated={!!userId}
+              isAuthenticating={isAuthenticating}
+              onSubdomainFetched={handleSubdomainFetched}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </LanguageProvider>
   );
 }
 

@@ -1,9 +1,15 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { faqData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function FAQ() {
+interface FAQProps {
+  data: any;
+}
+
+export default function FAQ({ data }: FAQProps) {
+  const { currentLang } = useLanguage();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -17,14 +23,14 @@ export default function FAQ() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {faqData.sectionTitle}
+            {getText(data?.sectionTitle, currentLang)}
           </h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto mb-6" />
-          <p className="text-xl text-gray-700">{faqData.sectionSubtitle}</p>
+          <p className="text-xl text-gray-700">{getText(data?.sectionSubtitle, currentLang)}</p>
         </motion.div>
 
         <div className="space-y-4">
-          {faqData.items.map((item, index) => (
+          {(data?.items || []).map((item: any, index: number) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -40,7 +46,7 @@ export default function FAQ() {
                 whileTap={{ scale: 0.99 }}
               >
                 <h3 className="text-lg font-bold text-gray-900 pr-4">
-                  {item.question}
+                  {getText(item.question, currentLang)}
                 </h3>
                 <motion.div
                   animate={{ rotate: openIndex === index ? 180 : 0 }}
@@ -61,7 +67,7 @@ export default function FAQ() {
                 className="overflow-hidden"
               >
                 <div className="px-6 pb-6 pt-2">
-                  <p className="text-gray-700 leading-relaxed">{item.answer}</p>
+                  <p className="text-gray-700 leading-relaxed">{getText(item.answer, currentLang)}</p>
                 </div>
               </motion.div>
             </motion.div>

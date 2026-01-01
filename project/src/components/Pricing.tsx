@@ -1,8 +1,21 @@
 import { motion } from 'framer-motion';
 import { Check, Star } from 'lucide-react';
-import { pricingData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function Pricing() {
+interface PricingProps {
+  data: any;
+}
+
+export default function Pricing({ data }: PricingProps) {
+  const { currentLang } = useLanguage();
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const sectionSubtitle = getText(data?.sectionSubtitle, currentLang);
+  const note = getText(data?.note, currentLang);
+  const plans = data?.plans || [];
+  const popularLabel = getText(data?.popularLabel, currentLang);
+  const taxIncluded = getText(data?.taxIncluded, currentLang);
+  const ctaButton = getText(data?.ctaButton, currentLang);
   return (
     <section id="pricing" className="py-24 px-4 bg-gradient-to-b from-white to-teal-50/30">
       <div className="max-w-7xl mx-auto">
@@ -14,14 +27,14 @@ export default function Pricing() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {pricingData.sectionTitle}
+            {sectionTitle}
           </h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto mb-6" />
-          <p className="text-xl text-gray-700">{pricingData.sectionSubtitle}</p>
+          <p className="text-xl text-gray-700">{sectionSubtitle}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {pricingData.plans.map((plan, index) => (
+          {plans.map((plan: any, index: number) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 30 }}
@@ -37,32 +50,32 @@ export default function Pricing() {
                 <div className="absolute top-0 right-0 bg-teal-600 text-white px-6 py-2 rounded-bl-2xl">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-current" />
-                    <span className="font-bold text-sm">人気</span>
+                    <span className="font-bold text-sm">{popularLabel}</span>
                   </div>
                 </div>
               )}
 
               <div className="p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {plan.name}
+                  {getText(plan.name, currentLang)}
                 </h3>
                 <p className="text-gray-600 text-sm mb-6 min-h-[40px]">
-                  {plan.description}
+                  {getText(plan.description, currentLang)}
                 </p>
 
                 <div className="mb-6">
                   <div className="text-4xl font-bold text-teal-600">
-                    {plan.price}
+                    {getText(plan.price, currentLang)}
                   </div>
-                  <div className="text-sm text-gray-500">税込</div>
+                  <div className="text-sm text-gray-500">{taxIncluded}</div>
                 </div>
 
                 <div className="border-t border-gray-200 pt-6">
                   <ul className="space-y-3">
-                    {plan.features.map((feature, idx) => (
+                    {(plan.features || []).map((feature: any, idx: number) => (
                       <li key={idx} className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700 text-sm">{feature}</span>
+                        <span className="text-gray-700 text-sm">{getText(feature, currentLang)}</span>
                       </li>
                     ))}
                   </ul>
@@ -80,14 +93,14 @@ export default function Pricing() {
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}
                 >
-                  ご予約・お問い合わせ
+                  {ctaButton}
                 </motion.a>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {pricingData.note && (
+        {note && (
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -95,7 +108,7 @@ export default function Pricing() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center text-sm text-gray-600"
           >
-            {pricingData.note}
+            {note}
           </motion.div>
         )}
       </div>

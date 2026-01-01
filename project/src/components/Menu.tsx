@@ -1,10 +1,11 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import { menuData } from '../data/content';
 import type { MenuItem as MenuItemType } from '../data/types';
 import Lightbox from './Lightbox';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-function MenuItem({ item, index, onImageClick }: { item: MenuItemType; index: number; onImageClick: () => void }) {
+function MenuItem({ item, index, onImageClick, lang }: { item: MenuItemType; index: number; onImageClick: () => void; lang: string }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -32,6 +33,11 @@ function MenuItem({ item, index, onImageClick }: { item: MenuItemType; index: nu
     mouseY.set(0);
   };
 
+  const name = getText(item.name, lang);
+  const description = getText(item.description, lang);
+  const price = getText(item.price, lang);
+  const image = typeof item.image === 'string' ? item.image : (item.image as any)?.ja || '';
+
   return (
     <motion.div
       ref={cardRef}
@@ -55,8 +61,8 @@ function MenuItem({ item, index, onImageClick }: { item: MenuItemType; index: nu
       >
         <div className="relative overflow-hidden h-56 cursor-pointer" onClick={onImageClick} style={{ pointerEvents: 'auto' }}>
           <motion.img
-            src={item.image}
-            alt={item.name}
+            src={image}
+            alt={name}
             className="w-full h-full object-cover pointer-events-none"
             whileHover={{ scale: 1.15 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -66,20 +72,25 @@ function MenuItem({ item, index, onImageClick }: { item: MenuItemType; index: nu
             className="absolute top-4 right-4 bg-teal-600 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg pointer-events-none"
             style={{ transform: 'translateZ(50px)' }}
           >
-            {item.price}
+            {price}
           </motion.div>
         </div>
 
         <div className="p-6">
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">{item.name}</h3>
-          <p className="text-gray-600 leading-relaxed">{item.description}</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{name}</h3>
+          <p className="text-gray-600 leading-relaxed">{description}</p>
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
-export default function Menu() {
+interface MenuProps {
+  data: any;
+}
+
+export default function Menu({ data }: MenuProps) {
+  const { currentLang } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -121,18 +132,26 @@ export default function Menu() {
     setLightboxOpen(false);
   };
 
+  const items = data?.items || [];
+
   const goToPrevious = () => {
-    setLightboxIndex((prev) => (prev > 0 ? prev - 1 : menuData.items.length - 1));
+    setLightboxIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
   };
 
   const goToNext = () => {
-    setLightboxIndex((prev) => (prev < menuData.items.length - 1 ? prev + 1 : 0));
+    setLightboxIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
   };
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const sectionSubtitle = getText(data?.sectionSubtitle, currentLang);
 
-  const lightboxImages = menuData.items.map((item) => ({
-    src: item.image,
-    alt: item.name,
-  }));
+  const lightboxImages = items.map((item: any) => {
+    const image = typeof item.image === 'string' ? item.image : (item.image as any)?.ja || '';
+    const name = getText(item.name, currentLang);
+    return {
+      src: image,
+      alt: name,
+    };
+  });
 
   return (
     <section id="menu" className="py-24 bg-gradient-to-b from-amber-50/30 to-white">
@@ -144,14 +163,14 @@ export default function Menu() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{menuData.sectionTitle}</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{sectionTitle}</h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto mb-6" />
-          <p className="text-xl text-gray-700">{menuData.sectionSubtitle}</p>
+          <p className="text-xl text-gray-700">{sectionSubtitle}</p>
         </motion.div>
 
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {menuData.items.map((item, index) => (
-            <MenuItem key={index} item={item} index={index} onImageClick={() => openLightbox(index)} />
+          {items.map((item: any, index: number) => (
+            <MenuItem key={index} item={item} index={index} onImageClick={() => openLightbox(index)} lang={currentLang} />
           ))}
         </div>
 
@@ -160,14 +179,14 @@ export default function Menu() {
             ref={scrollRef}
             className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 gap-4 pb-4"
           >
-            {menuData.items.map((item, index) => (
+            {items.map((item: any, index: number) => (
               <div key={index} className="flex-shrink-0 w-[85vw] snap-center">
-                <MenuItem item={item} index={index} onImageClick={() => openLightbox(index)} />
+                <MenuItem item={item} index={index} onImageClick={() => openLightbox(index)} lang={currentLang} />
               </div>
             ))}
           </div>
           <div className="flex justify-center gap-2 mt-6">
-            {menuData.items.map((_, index) => (
+            {items.map((_: any, index: number) => (
               <button
                 key={index}
                 onClick={() => scrollToIndex(index)}

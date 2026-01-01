@@ -1,9 +1,15 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { heroData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function Hero() {
+interface HeroProps {
+  data: any;
+}
+
+export default function Hero({ data }: HeroProps) {
+  const { currentLang } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -13,6 +19,12 @@ export default function Hero() {
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
+  const title = getText(data?.title, currentLang);
+  const subtitle = getText(data?.subtitle, currentLang);
+  const backgroundImage = typeof data?.backgroundImage === 'string'
+    ? data.backgroundImage
+    : data?.backgroundImage?.ja || 'https://images.pexels.com/photos/4958729/pexels-photo-4958729.jpeg';
+
   return (
     <div ref={ref} className="relative h-screen overflow-hidden">
       <motion.div
@@ -21,8 +33,8 @@ export default function Hero() {
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 z-10" />
         <img
-          src={heroData.backgroundImage}
-          alt="沖縄そば"
+          src={backgroundImage}
+          alt={title}
           className="w-full h-full object-cover"
         />
       </motion.div>
@@ -43,10 +55,10 @@ export default function Hero() {
               textShadow: '0 4px 20px rgba(0,0,0,0.5)',
             }}
           >
-            {heroData.title.split('\n').map((line, i) => (
+            {title.split('\n').map((line, i) => (
               <span key={i}>
                 {line}
-                {i < heroData.title.split('\n').length - 1 && <br />}
+                {i < title.split('\n').length - 1 && <br />}
               </span>
             ))}
           </motion.h1>
@@ -59,7 +71,7 @@ export default function Hero() {
               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
             }}
           >
-            {heroData.subtitle}
+            {subtitle}
           </motion.p>
         </motion.div>
 

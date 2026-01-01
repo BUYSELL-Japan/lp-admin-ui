@@ -1,13 +1,23 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
-import { aboutData } from '../data/content';
-import type { AboutFeature } from '../data/types';
+import { useLanguage, Language } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-function FeatureCard({ feature, index }: { feature: AboutFeature; index: number }) {
+interface AboutFeature {
+  title: string | { ja: string; en?: string; 'zh-tw'?: string; ko?: string };
+  description: string | { ja: string; en?: string; 'zh-tw'?: string; ko?: string };
+  image: string;
+}
+
+function FeatureCard({ feature, index, lang }: { feature: AboutFeature; index: number; lang: Language }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   const isEven = index % 2 === 0;
+
+  const title = getText(feature.title, lang);
+  const description = getText(feature.description, lang);
+  const image = typeof feature.image === 'string' ? feature.image : (feature.image as any)?.ja || '';
 
   return (
     <motion.div
@@ -24,8 +34,8 @@ function FeatureCard({ feature, index }: { feature: AboutFeature; index: number 
       >
         <div className="relative overflow-hidden rounded-2xl shadow-2xl">
           <motion.img
-            src={feature.image}
-            alt={feature.title}
+            src={image}
+            alt={title}
             className="w-full h-80 object-cover"
             whileHover={{ scale: 1.1 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -40,7 +50,7 @@ function FeatureCard({ feature, index }: { feature: AboutFeature; index: number 
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: isEven ? -20 : 20 }}
           transition={{ duration: 0.6, delay: index * 0.2 + 0.2 }}
         >
-          {feature.title}
+          {title}
         </motion.h3>
         <motion.p
           className="text-lg text-gray-700 leading-relaxed"
@@ -48,14 +58,22 @@ function FeatureCard({ feature, index }: { feature: AboutFeature; index: number 
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: isEven ? -20 : 20 }}
           transition={{ duration: 0.6, delay: index * 0.2 + 0.4 }}
         >
-          {feature.description}
+          {description}
         </motion.p>
       </div>
     </motion.div>
   );
 }
 
-export default function About() {
+interface AboutProps {
+  data: any;
+}
+
+export default function About({ data }: AboutProps) {
+  const { currentLang } = useLanguage();
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const features = data?.features || [];
+
   return (
     <section id="about" className="py-24 px-4 bg-gradient-to-b from-white to-amber-50/30">
       <div className="max-w-6xl mx-auto">
@@ -67,14 +85,14 @@ export default function About() {
           className="text-center mb-20"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {aboutData.sectionTitle}
+            {sectionTitle}
           </h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto" />
         </motion.div>
 
         <div>
-          {aboutData.features.map((feature, index) => (
-            <FeatureCard key={index} feature={feature} index={index} />
+          {features.map((feature: AboutFeature, index: number) => (
+            <FeatureCard key={index} feature={feature} index={index} lang={currentLang} />
           ))}
         </div>
       </div>

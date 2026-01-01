@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Clock, MapPin, Phone, Mail } from 'lucide-react';
-import { storeInfoData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
 const iconMap = {
   MapPin,
@@ -9,7 +10,17 @@ const iconMap = {
   Mail,
 };
 
-export default function StoreInfo() {
+interface StoreInfoProps {
+  data: any;
+}
+
+export default function StoreInfo({ data }: StoreInfoProps) {
+  const { currentLang } = useLanguage();
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const items = data?.items || [];
+  const mainImage = typeof data?.mainImage === 'string' ? data.mainImage : data?.mainImage?.ja || '';
+  const mainImageCaption = getText(data?.mainImageCaption, currentLang);
+
   return (
     <section id="store" className="py-24 px-4 bg-gradient-to-b from-white to-teal-50/30">
       <div className="max-w-6xl mx-auto">
@@ -20,13 +31,16 @@ export default function StoreInfo() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{storeInfoData.sectionTitle}</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{sectionTitle}</h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto" />
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {storeInfoData.items.map((item, index) => {
+          {items.map((item: any, index: number) => {
             const IconComponent = iconMap[item.icon as keyof typeof iconMap];
+            const title = getText(item.title, currentLang);
+            const content = getText(item.content, currentLang);
+
             return (
               <motion.div
                 key={index}
@@ -46,8 +60,8 @@ export default function StoreInfo() {
                     <IconComponent className="w-6 h-6 text-teal-600" />
                   </motion.div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                    <p className="text-gray-700 leading-relaxed">{item.content}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+                    <p className="text-gray-700 leading-relaxed">{content}</p>
                   </div>
                 </div>
               </motion.div>
@@ -64,13 +78,13 @@ export default function StoreInfo() {
         >
           <div className="aspect-video bg-gray-200 relative">
             <img
-              src={storeInfoData.mainImage}
-              alt="店内の様子"
+              src={mainImage}
+              alt={mainImageCaption}
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             <div className="absolute bottom-6 left-6 text-white">
-              <p className="text-2xl font-bold">{storeInfoData.mainImageCaption}</p>
+              <p className="text-2xl font-bold">{mainImageCaption}</p>
             </div>
           </div>
         </motion.div>

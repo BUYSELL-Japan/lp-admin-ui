@@ -89,118 +89,16 @@ export async function saveSection(userId: string, section: string, data: any): P
   }
 }
 
-function mergeTranslationKeys(target: any, source: any): void {
-  if (!source || typeof source !== 'object') {
-    return;
-  }
-
-  // 配列の場合
-  if (Array.isArray(source)) {
-    if (!Array.isArray(target)) {
-      console.warn('Target is not an array but source is. Skipping merge.');
-      return;
-    }
-    // sourceの配列の長さに合わせてtargetを調整
-    for (let i = 0; i < source.length; i++) {
-      if (source[i] && typeof source[i] === 'object') {
-        if (!target[i]) {
-          target[i] = Array.isArray(source[i]) ? [] : {};
-        }
-        mergeTranslationKeys(target[i], source[i]);
-      }
-    }
-    return;
-  }
-
-  // オブジェクトの場合
-  for (const key in source) {
-    const isTranslationKey = key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko');
-
-    // 翻訳キー（_en, _zh, _ko）は常にマージ
-    if (isTranslationKey) {
-      target[key] = source[key];
-      continue;
-    }
-
-    // 配列の場合
-    if (Array.isArray(source[key])) {
-      if (!Array.isArray(target[key])) {
-        target[key] = [];
-      }
-      mergeTranslationKeys(target[key], source[key]);
-      continue;
-    }
-
-    // ネストされたオブジェクトの場合
-    if (source[key] && typeof source[key] === 'object') {
-      if (!target[key] || typeof target[key] !== 'object') {
-        target[key] = {};
-      }
-      mergeTranslationKeys(target[key], source[key]);
-      continue;
-    }
-
-    // プリミティブ値（文字列、数値、真偽値など）
-    // 日本語の元データを保持（targetに既に存在する場合は上書きしない）
-    if (!(key in target)) {
-      target[key] = source[key];
-    }
-  }
-}
-
-function countTranslationKeys(obj: any, prefix: string = ''): number {
-  let count = 0;
-  if (!obj || typeof obj !== 'object') {
-    return 0;
-  }
-
-  for (const key in obj) {
-    if (key.endsWith('_en') || key.endsWith('_zh') || key.endsWith('_ko')) {
-      count++;
-    } else if (obj[key] && typeof obj[key] === 'object') {
-      count += countTranslationKeys(obj[key], prefix ? `${prefix}.${key}` : key);
-    }
-  }
-  return count;
-}
+// No longer needed - Lambda returns multilingual object format
 
 export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
   try {
     console.log('=== Saving all sections ===');
-    console.log('Fetching existing data to preserve translations...');
-
-    // 既存のデータを取得して翻訳データを保持
-    const existingData = await getSectionData(userId);
-    const contentToSave: any = {};
-
-    // 新しい日本語データをベースにする
-    for (const sectionName in allSectionData) {
-      contentToSave[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
-    }
-
-    // 既存の翻訳データがあれば保持（ネストされたキーも含む）
-    if (existingData) {
-      console.log('Existing data found, preserving translation keys recursively...');
-      for (const sectionName in existingData) {
-        if (contentToSave[sectionName]) {
-          mergeTranslationKeys(contentToSave[sectionName], existingData[sectionName]);
-        }
-      }
-
-      // 翻訳データが保持されたか確認
-      let preservedTranslationKeys = 0;
-      for (const sectionName in contentToSave) {
-        preservedTranslationKeys += countTranslationKeys(contentToSave[sectionName]);
-      }
-      console.log(`Preserved ${preservedTranslationKeys} translation keys from existing data (including nested)`);
-    } else {
-      console.log('No existing data found, saving new data only');
-    }
 
     const payload = {
       storeId: userId,
       section: 'all',
-      content: contentToSave,
+      content: allSectionData,
     };
 
     const response = await fetch(API_ENDPOINT, {
@@ -253,31 +151,6 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
   }
 }
 
-function normalizeMultilingualFields(data: any): any {
-  if (data === null || data === undefined) {
-    return data;
-  }
-
-  if (typeof data === 'object' && !Array.isArray(data)) {
-    const keys = Object.keys(data);
-    if (keys.includes('ja') && (keys.includes('en') || keys.includes('ko') || keys.includes('zh-tw'))) {
-      return data.ja || data.en || data.ko || data['zh-tw'] || '';
-    }
-
-    const normalized: any = {};
-    for (const key in data) {
-      normalized[key] = normalizeMultilingualFields(data[key]);
-    }
-    return normalized;
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(item => normalizeMultilingualFields(item));
-  }
-
-  return data;
-}
-
 export async function getSectionData(storeId: string): Promise<any | null> {
   try {
     const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
@@ -326,11 +199,8 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('Normalizing multilingual fields...');
-    const normalized = normalizeMultilingualFields(contentData);
-    console.log('✓ Multilingual fields normalized');
-
-    return normalized;
+    console.log('✓ Returning multilingual data as-is (object format with ja, en, zh-tw, ko)');
+    return contentData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
@@ -515,8 +385,7 @@ async function translateCompanySection(
     }
   }
 
-  const translationCount = countTranslationKeys(mergedResult.company);
-  console.log(`\n  ✓ Company section completed: ${translationCount} translation keys`);
+  console.log(`\n  ✓ Company section completed`);
   return mergedResult;
 }
 
@@ -581,8 +450,7 @@ async function translatePricingSection(
     }
   }
 
-  const translationCount = countTranslationKeys(mergedResult.pricing);
-  console.log(`\n  ✓ Pricing section completed: ${translationCount} translation keys`);
+  console.log(`\n  ✓ Pricing section completed`);
   return mergedResult;
 }
 
@@ -648,8 +516,7 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
     }
   }
 
-  const translationCount = countTranslationKeys(mergedResult.staff);
-  console.log(`\n  ✓ Staff section completed: ${translationCount} translation keys`);
+  console.log(`\n  ✓ Staff section completed`);
   return mergedResult;
 }
 
@@ -719,8 +586,7 @@ async function translateArraySectionOneByOne(
     }
   }
 
-  const translationCount = countTranslationKeys(mergedResult[sectionName]);
-  console.log(`\n  ✓ ${sectionName}: All items merged successfully (${translationCount} translation keys)`);
+  console.log(`\n  ✓ ${sectionName}: All items merged successfully`);
   return mergedResult;
 }
 
@@ -916,72 +782,20 @@ export async function translateAndSave(
       }
 
       // actualData が { [sectionName]: {...} } の形式の場合、その中身を取り出す
-      // 例: { hero: { title: "...", title_en: "...", ... } }
       if (actualData[sectionName] && typeof actualData[sectionName] === 'object') {
         console.log(`  ✓ Direct section match found for ${sectionName}`);
-        const sectionData = actualData[sectionName];
-
-        // マージ前の翻訳キー数
-        const beforeCount = countTranslationKeys(mergedContent[sectionName]);
-        console.log(`  Before merge: ${beforeCount} translation keys in ${sectionName}`);
-        console.log(`  Merging data with keys:`, Object.keys(sectionData).slice(0, 10).join(', '), Object.keys(sectionData).length > 10 ? '...' : '');
-
-        // 翻訳キーを再帰的にマージ（ネストされたキーも含む）
-        mergeTranslationKeys(mergedContent[sectionName], sectionData);
-
-        // マージ後の翻訳キー数
-        const afterCount = countTranslationKeys(mergedContent[sectionName]);
-        const addedCount = afterCount - beforeCount;
-        console.log(`  After merge: ${afterCount} translation keys (added ${addedCount} keys)`);
-
-        if (addedCount === 0) {
-          console.warn(`  ⚠ WARNING: No translation keys were added for ${sectionName}!`);
-          console.warn(`  Source data keys:`, Object.keys(sectionData).join(', '));
-          console.warn(`  Checking for translation keys in source:`,
-            Object.keys(sectionData).filter(k => k.endsWith('_en') || k.endsWith('_zh') || k.endsWith('_ko')).join(', ') || 'NONE FOUND');
-        }
+        mergedContent[sectionName] = actualData[sectionName];
       }
       // actualData が複数セクションを含む場合（バッチ処理の結果など）
       else {
         console.log(`  Processing multiple sections from response`);
-        let hasValidSections = false;
-
         for (const secName in actualData) {
           // 有効なセクション名のみ処理
           if (!VALID_SECTIONS.includes(secName)) {
             console.log(`  Skipping invalid key: ${secName}`);
             continue;
           }
-
-          hasValidSections = true;
-
-          if (!mergedContent[secName]) {
-            mergedContent[secName] = {};
-          }
-
-          const sectionData = actualData[secName];
-
-          // マージ前の翻訳キー数
-          const beforeCount = countTranslationKeys(mergedContent[secName]);
-          console.log(`  Before merge: ${beforeCount} translation keys in ${secName}`);
-          console.log(`  Merging section ${secName}, keys:`, Object.keys(sectionData).slice(0, 10).join(', '), Object.keys(sectionData).length > 10 ? '...' : '');
-
-          // 翻訳キーを再帰的にマージ（ネストされたキーも含む）
-          mergeTranslationKeys(mergedContent[secName], sectionData);
-
-          // マージ後の翻訳キー数
-          const afterCount = countTranslationKeys(mergedContent[secName]);
-          const addedCount = afterCount - beforeCount;
-          console.log(`  After merge: ${afterCount} translation keys (added ${addedCount} keys)`);
-
-          if (addedCount === 0) {
-            console.warn(`  ⚠ WARNING: No translation keys were added for ${secName}!`);
-          }
-        }
-
-        if (!hasValidSections) {
-          console.error(`  ✗ ERROR: No valid sections found in response for ${sectionName}!`);
-          console.error(`  Available keys:`, Object.keys(actualData).join(', '));
+          mergedContent[secName] = actualData[secName];
         }
       }
 
@@ -1000,59 +814,12 @@ export async function translateAndSave(
 
     console.log('\nAll sections translated successfully');
     console.log('Merged content structure:', Object.keys(mergedContent).join(', '));
-    console.log('\n=== Final Merged Content ===');
-
-    // 各セクションのキーを表示（翻訳データが含まれているか確認）
-    for (const sectionName in mergedContent) {
-      const translationCount = countTranslationKeys(mergedContent[sectionName]);
-      console.log(`  ${sectionName}: ${translationCount} translation keys (including nested)`);
-    }
-
-    // 保存データの検証
-    console.log('\n=== Pre-save Data Verification ===');
-    console.log('Total sections to save:', Object.keys(mergedContent).length);
-    console.log('Section names:', Object.keys(mergedContent).join(', '));
-
-    // 各セクションのキー数を確認
-    for (const sectionName in mergedContent) {
-      const keyCount = Object.keys(mergedContent[sectionName]).length;
-      console.log(`  ${sectionName}: ${keyCount} keys`);
-    }
 
     const savePayload = {
       storeId: userId,
       section: 'all',
       content: mergedContent,
     };
-
-    // メタデータが除外されていることを確認
-    console.log('\n=== Save Payload Structure ===');
-    console.log('  storeId:', savePayload.storeId);
-    console.log('  section:', savePayload.section);
-    console.log('  content keys:', Object.keys(savePayload.content).join(', '));
-
-    // ペイロード構造の検証（二重構造になっていないか確認）
-    console.log('\n=== Payload Structure Validation ===');
-    console.log('  Top level keys:', Object.keys(savePayload).join(', '));
-    console.log('  savePayload.content is object:', typeof savePayload.content === 'object');
-    console.log('  savePayload.content.content exists:', 'content' in savePayload.content);
-    if ('content' in savePayload.content) {
-      console.error('  ⚠️ WARNING: Double-nested content structure detected!');
-    } else {
-      console.log('  ✓ No double nesting - structure is correct');
-    }
-
-    // 翻訳データが含まれているか最終確認
-    let totalTranslationKeys = 0;
-    for (const sectionName in savePayload.content) {
-      totalTranslationKeys += countTranslationKeys(savePayload.content[sectionName]);
-    }
-    console.log(`  Total translation keys in payload: ${totalTranslationKeys} (including nested)`);
-    if (totalTranslationKeys === 0) {
-      console.error('  ⚠️ WARNING: No translation data in payload!');
-    } else {
-      console.log(`  ✓ Translation data confirmed (${totalTranslationKeys} keys including nested)`);
-    }
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
     const saveResponse = await fetch(API_ENDPOINT, {
@@ -1070,20 +837,7 @@ export async function translateAndSave(
     }
 
     const result = await saveResponse.json();
-    console.log('\n=== Save Response ===');
     console.log('Save translated content successful:', result);
-
-    // 保存成功後、確定したデータをログ出力（検証のための再取得は行わない）
-    console.log('\n=== Final Data Summary ===');
-    console.log('Total sections saved:', Object.keys(mergedContent).length);
-    console.log('Sections:', Object.keys(mergedContent).join(', '));
-
-    let totalTranslations = 0;
-    for (const sectionName in mergedContent) {
-      const count = countTranslationKeys(mergedContent[sectionName]);
-      totalTranslations += count;
-    }
-    console.log(`Total translation keys: ${totalTranslations}`);
     console.log('✓ Translation and save completed successfully');
 
     return true;

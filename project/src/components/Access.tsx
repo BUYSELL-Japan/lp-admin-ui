@@ -1,8 +1,14 @@
 import { motion } from 'framer-motion';
 import { MapPin, Car, Train } from 'lucide-react';
-import { accessData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function Access() {
+interface AccessProps {
+  data: any;
+}
+
+export default function Access({ data }: AccessProps) {
+  const { currentLang } = useLanguage();
   return (
     <section id="access" className="py-24 px-4 bg-gradient-to-b from-teal-50/30 to-white">
       <div className="max-w-6xl mx-auto">
@@ -14,10 +20,10 @@ export default function Access() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {accessData.sectionTitle}
+            {getText(data?.sectionTitle, currentLang)}
           </h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto mb-6" />
-          <p className="text-xl text-gray-700">{accessData.sectionSubtitle}</p>
+          <p className="text-xl text-gray-700">{getText(data?.sectionSubtitle, currentLang)}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -33,8 +39,8 @@ export default function Access() {
                 <MapPin className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">住所</h3>
-                <p className="text-gray-700 text-lg">{accessData.address}</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{getText(data?.addressLabel, currentLang)}</h3>
+                <p className="text-gray-700 text-lg">{getText(data?.address, currentLang)}</p>
               </div>
             </div>
 
@@ -45,13 +51,13 @@ export default function Access() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    {accessData.parking.title}
+                    {getText(data?.parking?.title, currentLang)}
                   </h3>
-                  <p className="text-gray-700 mb-2">{accessData.parking.description}</p>
+                  <p className="text-gray-700 mb-2">{getText(data?.parking?.description, currentLang)}</p>
                   <p className="text-teal-600 font-bold text-lg mb-2">
-                    駐車可能台数: {accessData.parking.spaces}
+                    {getText(data?.parking?.spacesLabel, currentLang)}: {getText(data?.parking?.spaces, currentLang)}
                   </p>
-                  <p className="text-sm text-gray-600">{accessData.parking.notes}</p>
+                  <p className="text-sm text-gray-600">{getText(data?.parking?.notes, currentLang)}</p>
                 </div>
               </div>
             </div>
@@ -63,15 +69,15 @@ export default function Access() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    {accessData.transportation.title}
+                    {getText(data?.transportation?.title, currentLang)}
                   </h3>
                   <div className="space-y-3">
-                    {accessData.transportation.methods.map((method, index) => (
+                    {(data?.transportation?.methods || []).map((method: any, index: number) => (
                       <div key={index} className="flex items-start gap-3">
                         <div className="w-2 h-2 bg-teal-600 rounded-full mt-2 flex-shrink-0" />
                         <div>
-                          <span className="font-bold text-gray-900">{method.type}:</span>
-                          <span className="text-gray-700 ml-2">{method.description}</span>
+                          <span className="font-bold text-gray-900">{getText(method.type, currentLang)}:</span>
+                          <span className="text-gray-700 ml-2">{getText(method.description, currentLang)}</span>
                         </div>
                       </div>
                     ))}
@@ -90,14 +96,14 @@ export default function Access() {
           >
             <div className="aspect-square bg-gray-200">
               <iframe
-                src={accessData.mapEmbedUrl}
+                src={typeof data?.mapEmbedUrl === 'string' ? data.mapEmbedUrl : data?.mapEmbedUrl?.ja || ''}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="店舗地図"
+                title={getText(data?.mapTitle, currentLang)}
               />
             </div>
           </motion.div>

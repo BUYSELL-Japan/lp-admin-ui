@@ -1,13 +1,26 @@
 import { motion } from 'framer-motion';
 import { Phone, Mail } from 'lucide-react';
-import { ctaData } from '../data/content';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function CTA() {
+interface CTAProps {
+  data: any;
+}
+
+export default function CTA({ data }: CTAProps) {
+  const { currentLang } = useLanguage();
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const sectionSubtitle = getText(data?.sectionSubtitle, currentLang);
+  const description = getText(data?.description, currentLang);
+  const backgroundImage = typeof data?.backgroundImage === 'string'
+    ? data.backgroundImage
+    : data?.backgroundImage?.ja || 'https://images.pexels.com/photos/4958729/pexels-photo-4958729.jpeg';
+  const buttons = data?.buttons || [];
   return (
     <section className="relative py-24 px-4 overflow-hidden">
       <div className="absolute inset-0">
         <img
-          src={ctaData.backgroundImage}
+          src={backgroundImage}
           alt="Background"
           className="w-full h-full object-cover"
         />
@@ -22,18 +35,18 @@ export default function CTA() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            {ctaData.sectionTitle}
+            {sectionTitle}
           </h2>
           <div className="w-24 h-1 bg-white mx-auto mb-6" />
           <p className="text-xl text-white/90 mb-3">
-            {ctaData.sectionSubtitle}
+            {sectionSubtitle}
           </p>
           <p className="text-lg text-white/80 mb-12 max-w-2xl mx-auto leading-relaxed">
-            {ctaData.description}
+            {description}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {ctaData.buttons.map((button, index) => (
+            {buttons.map((button: any, index: number) => (
               <motion.a
                 key={index}
                 href={button.link}
@@ -54,7 +67,7 @@ export default function CTA() {
                 ) : (
                   <Mail className="w-5 h-5" />
                 )}
-                {button.text}
+                {getText(button.text, currentLang)}
               </motion.a>
             ))}
           </div>

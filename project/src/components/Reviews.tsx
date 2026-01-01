@@ -1,11 +1,21 @@
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import { reviewsData } from '../data/content';
 import { useRef, useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getText } from '../utils/i18n';
 
-export default function Reviews() {
+interface ReviewsProps {
+  data: any;
+}
+
+export default function Reviews({ data }: ReviewsProps) {
+  const { currentLang } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const sectionTitle = getText(data?.sectionTitle, currentLang);
+  const sectionSubtitle = getText(data?.sectionSubtitle, currentLang);
+  const reviews = data?.reviews || [];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,51 +55,58 @@ export default function Reviews() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {reviewsData.sectionTitle}
+            {sectionTitle}
           </h2>
           <div className="w-24 h-1 bg-teal-600 mx-auto mb-6" />
-          <p className="text-xl text-gray-700">{reviewsData.sectionSubtitle}</p>
+          <p className="text-xl text-gray-700">{sectionSubtitle}</p>
         </motion.div>
 
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {reviewsData.reviews.map((review, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={review.avatar}
-                  alt={review.name}
-                  className="w-14 h-14 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="font-bold text-gray-900">{review.name}</h3>
-                  <p className="text-sm text-gray-500">{review.date}</p>
-                </div>
-              </div>
+          {reviews.map((review: any, index: number) => {
+            const name = getText(review.name, currentLang);
+            const comment = getText(review.comment, currentLang);
+            const avatar = typeof review.avatar === 'string' ? review.avatar : review.avatar?.ja || '';
+            const date = typeof review.date === 'string' ? review.date : review.date?.ja || '';
 
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < review.rating
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300'
-                    }`}
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <img
+                    src={avatar}
+                    alt={name}
+                    className="w-14 h-14 rounded-full object-cover"
                   />
-                ))}
-              </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{name}</h3>
+                    <p className="text-sm text-gray-500">{date}</p>
+                  </div>
+                </div>
 
-              <p className="text-gray-700 leading-relaxed">{review.comment}</p>
-            </motion.div>
-          ))}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < review.rating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <p className="text-gray-700 leading-relaxed">{comment}</p>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="md:hidden -mx-4">
@@ -97,49 +114,56 @@ export default function Reviews() {
             ref={scrollRef}
             className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 gap-4 pb-4"
           >
-            {reviewsData.reviews.map((review, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="flex-shrink-0 w-[85vw] snap-center"
-              >
-                <div className="bg-white rounded-2xl shadow-lg p-8 h-full">
-                  <div className="flex items-center gap-4 mb-4">
-                    <img
-                      src={review.avatar}
-                      alt={review.name}
-                      className="w-14 h-14 rounded-full object-cover"
-                    />
-                    <div>
-                      <h3 className="font-bold text-gray-900">{review.name}</h3>
-                      <p className="text-sm text-gray-500">{review.date}</p>
-                    </div>
-                  </div>
+            {reviews.map((review: any, index: number) => {
+              const name = getText(review.name, currentLang);
+              const comment = getText(review.comment, currentLang);
+              const avatar = typeof review.avatar === 'string' ? review.avatar : review.avatar?.ja || '';
+              const date = typeof review.date === 'string' ? review.date : review.date?.ja || '';
 
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-5 h-5 ${
-                          i < review.rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="flex-shrink-0 w-[85vw] snap-center"
+                >
+                  <div className="bg-white rounded-2xl shadow-lg p-8 h-full">
+                    <div className="flex items-center gap-4 mb-4">
+                      <img
+                        src={avatar}
+                        alt={name}
+                        className="w-14 h-14 rounded-full object-cover"
                       />
-                    ))}
-                  </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{name}</h3>
+                        <p className="text-sm text-gray-500">{date}</p>
+                      </div>
+                    </div>
 
-                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
-                </div>
-              </motion.div>
-            ))}
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${
+                            i < review.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <p className="text-gray-700 leading-relaxed">{comment}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="flex justify-center gap-2 mt-6">
-            {reviewsData.reviews.map((_, index) => (
+            {reviews.map((_: any, index: number) => (
               <button
                 key={index}
                 onClick={() => scrollToIndex(index)}
@@ -148,7 +172,7 @@ export default function Reviews() {
                     ? 'bg-teal-600 w-8'
                     : 'bg-gray-300 hover:bg-gray-400'
                 }`}
-                aria-label={`レビュー ${index + 1} を表示`}
+                aria-label={`${currentLang === 'ja' ? 'レビュー' : 'Review'} ${index + 1} ${currentLang === 'ja' ? 'を表示' : ''}`}
               />
             ))}
           </div>
