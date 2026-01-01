@@ -582,6 +582,75 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
   return mergedResult;
 }
 
+async function translateAccessSection(userId: string, accessContent: any): Promise<any> {
+  console.log('\n=== Translating access section with specialized processing ===');
+
+  const methods = accessContent.transportation?.methods || [];
+  if (methods.length === 0) {
+    console.log('  No transportation methods found, translating entire access section');
+    return translateSection(userId, 'access', accessContent);
+  }
+
+  console.log(`  Total transportation methods to translate: ${methods.length}`);
+
+  const mergedResult: any = { access: {} };
+
+  let isFirstMethod = true;
+
+  for (let i = 0; i < methods.length; i++) {
+    console.log(`\n  [${i + 1}/${methods.length}] Translating method: "${methods[i].type}"...`);
+
+    const singleMethodContent = {
+      ...accessContent,
+      transportation: {
+        title: accessContent.transportation.title,
+        methods: [methods[i]],
+      },
+    };
+
+    try {
+      const methodResult = await translateSection(userId, 'access', singleMethodContent);
+
+      if (methodResult.access) {
+        if (isFirstMethod) {
+          for (const key in methodResult.access) {
+            if (key !== 'transportation') {
+              mergedResult.access[key] = methodResult.access[key];
+            }
+          }
+          mergedResult.access.transportation = {
+            title: methodResult.access.transportation?.title || accessContent.transportation.title,
+            methods: [],
+          };
+          console.log(`  ✓ Initialized access fields:`, Object.keys(mergedResult.access).join(', '));
+          isFirstMethod = false;
+        }
+
+        if (methodResult.access.transportation?.methods && Array.isArray(methodResult.access.transportation.methods)) {
+          mergedResult.access.transportation.methods.push(...methodResult.access.transportation.methods);
+          console.log(`  ✓ Added method (total: ${mergedResult.access.transportation.methods.length}/${methods.length})`);
+        } else {
+          console.warn(`  ⚠ No transportation methods in result`);
+        }
+      } else {
+        console.warn(`  ⚠ Unexpected structure from translateSection for access method ${i + 1}`);
+        console.warn(`  Available keys:`, Object.keys(methodResult).join(', '));
+      }
+
+      if (i < methods.length - 1) {
+        console.log('  Waiting 5s before next transportation method...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to translate access method ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  console.log(`\n  ✓ Access section completed`);
+  return mergedResult;
+}
+
 async function translateArraySectionOneByOne(
   userId: string,
   sectionName: string,
@@ -677,6 +746,11 @@ async function translateSectionInBatches(
   if (sectionName === 'reviews') {
     console.log(`${sectionName}: Using specialized reviews translation function`);
     return translateReviewsSection(userId, sectionContent);
+  }
+
+  if (sectionName === 'access') {
+    console.log(`${sectionName}: Using specialized access translation function`);
+    return translateAccessSection(userId, sectionContent);
   }
 
   let BATCH_SIZE = 4;
@@ -882,6 +956,22 @@ export async function translateAndSave(
     console.log('\nAll sections translated successfully');
     console.log('Merged content structure:', Object.keys(mergedContent).join(', '));
 
+    // デバッグ：各セクションのデータ量を確認
+    for (const sectionName of Object.keys(mergedContent)) {
+      const section = mergedContent[sectionName];
+      if (section && typeof section === 'object') {
+        const arrayFields = findArrayFields(section);
+        if (arrayFields.length > 0) {
+          for (const field of arrayFields) {
+            const arr = getNestedValue(section, field);
+            if (Array.isArray(arr)) {
+              console.log(`  ${sectionName}.${field}: ${arr.length} items`);
+            }
+          }
+        }
+      }
+    }
+
     const savePayload = {
       storeId: userId,
       section: 'all',
@@ -889,12 +979,17 @@ export async function translateAndSave(
     };
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
+    console.log('Save payload sections:', Object.keys(savePayload.content).join(', '));
+
+    const payloadString = JSON.stringify(savePayload);
+    console.log(`Payload size: ${payloadString.length} characters`);
+
     const saveResponse = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(savePayload),
+      body: payloadString,
     });
 
     if (!saveResponse.ok) {

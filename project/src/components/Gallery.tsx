@@ -78,7 +78,7 @@ export default function Gallery({ data }: GalleryProps) {
   };
 
   const lightboxImages = filteredImages.map((img: any) => {
-    const url = typeof img.url === 'string' ? img.url : (img.url as any)?.ja || '';
+    const url = typeof img.url === 'string' ? img.url : (img.url as any)?.[currentLang] || (img.url as any)?.ja || '';
     const caption = getText(img.caption, currentLang);
     return {
       src: url,
@@ -135,7 +135,7 @@ export default function Gallery({ data }: GalleryProps) {
           className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {filteredImages.map((image: any, index: number) => {
-            const url = typeof image.url === 'string' ? image.url : (image.url as any)?.ja || '';
+            const url = typeof image.url === 'string' ? image.url : (image.url as any)?.[currentLang] || (image.url as any)?.ja || '';
             const caption = getText(image.caption, currentLang);
             const category = getText(image.category, currentLang);
             return (
@@ -176,7 +176,7 @@ export default function Gallery({ data }: GalleryProps) {
             className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 gap-4 pb-4"
           >
             {filteredImages.map((image: any, index: number) => {
-              const url = typeof image.url === 'string' ? image.url : (image.url as any)?.ja || '';
+              const url = typeof image.url === 'string' ? image.url : (image.url as any)?.[currentLang] || (image.url as any)?.ja || '';
               const caption = getText(image.caption, currentLang);
               const category = getText(image.category, currentLang);
               return (

@@ -34,7 +34,7 @@ export default function Staff({ data }: StaffProps) {
             const name = getText(member.name, currentLang);
             const role = getText(member.role, currentLang);
             const description = getText(member.description, currentLang);
-            const image = typeof member.image === 'string' ? member.image : member.image?.ja || '';
+            const image = typeof member.image === 'string' ? member.image : member.image?.[currentLang] || member.image?.ja || '';
 
             return (
               <motion.div
