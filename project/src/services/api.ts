@@ -207,6 +207,88 @@ export async function getSectionData(storeId: string): Promise<any | null> {
   }
 }
 
+async function translateItem(
+  userId: string,
+  itemId: string,
+  itemContent: any,
+  retryCount: number = 0
+): Promise<any> {
+  const translatePayload = {
+    storeId: userId,
+    section: itemId,
+    content: itemContent,
+    targetLanguages: ['en', 'zh', 'ko']
+  };
+
+  try {
+    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(translatePayload),
+    });
+
+    if (!translateResponse.ok) {
+      if (translateResponse.status === 504 && retryCount < 3) {
+        const waitTimes = [15000, 25000, 35000];
+        const waitTime = waitTimes[retryCount];
+        console.warn(`504 timeout for ${itemId}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        return translateItem(userId, itemId, itemContent, retryCount + 1);
+      }
+
+      const errorText = await translateResponse.text();
+      console.error(`Translation API Error for ${itemId}:`, errorText);
+      throw new Error(`Failed to translate item: ${itemId}`);
+    }
+
+    const response = await translateResponse.json();
+
+    console.log(`  Raw API response keys for ${itemId}:`, Object.keys(response).join(', '));
+
+    let extractedContent: any = null;
+
+    if (response.content && typeof response.content === 'object') {
+      console.log(`  ✓ Extracted content from response.content for ${itemId}`);
+      extractedContent = response.content;
+    }
+    else if (response.storeId || response.section || response.targetLanguages) {
+      console.log(`  API response contains metadata fields, extracting content for ${itemId}`);
+      const contentOnly: any = {};
+      for (const key in response) {
+        if (key !== 'storeId' && key !== 'section' && key !== 'targetLanguages' && key !== 'content') {
+          contentOnly[key] = response[key];
+        }
+      }
+      if (Object.keys(contentOnly).length > 0) {
+        extractedContent = contentOnly;
+      }
+    }
+    else {
+      console.log(`  Using entire response for ${itemId}`);
+      extractedContent = response;
+    }
+
+    if (!extractedContent) {
+      console.error(`  ✗ Could not extract valid content for ${itemId}`);
+      throw new Error(`Invalid response structure for item: ${itemId}`);
+    }
+
+    console.log(`  ✓ Successfully extracted content for ${itemId}`);
+    return extractedContent;
+  } catch (error) {
+    if (retryCount < 3 && (error instanceof TypeError || (error as any).name === 'AbortError')) {
+      const waitTimes = [15000, 25000, 35000];
+      const waitTime = waitTimes[retryCount];
+      console.warn(`Network error for ${itemId}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return translateItem(userId, itemId, itemContent, retryCount + 1);
+    }
+    throw error;
+  }
+}
+
 async function translateSection(
   userId: string,
   sectionName: string,
@@ -249,16 +331,12 @@ async function translateSection(
 
     let extractedContent: any = null;
 
-    // レスポンスから content 部分のみを取り出す
-    // レスポンス構造: { storeId, section, content: {...}, targetLanguages }
     if (response.content && typeof response.content === 'object') {
       console.log(`  Extracted content keys for ${sectionName}:`, Object.keys(response.content).join(', '));
       extractedContent = response.content;
     }
-    // レスポンスにメタデータフィールドが含まれている場合は除外
     else if (response.storeId || response.section || response.targetLanguages) {
       console.warn(`  API response contains metadata fields. Attempting to extract content for ${sectionName}`);
-      // メタデータフィールドを除外してコンテンツのみを返す
       const contentOnly: any = {};
       for (const key in response) {
         if (key !== 'storeId' && key !== 'section' && key !== 'targetLanguages' && key !== 'content') {
@@ -270,23 +348,19 @@ async function translateSection(
         extractedContent = contentOnly;
       }
     }
-    // 最終フォールバック
     else {
       console.log(`  Using entire response for ${sectionName}`);
       extractedContent = response;
     }
 
-    // 確実に { [sectionName]: {...} } の構造を返す
     if (extractedContent && extractedContent[sectionName]) {
       console.log(`  ✓ Response has correct structure: { ${sectionName}: {...} }`);
       return extractedContent;
     } else if (extractedContent) {
-      // セクション名でラップされていない場合は、ラップして返す
       console.warn(`  ⚠ Response missing section wrapper, wrapping as { ${sectionName}: {...} }`);
       return { [sectionName]: extractedContent };
     }
 
-    // エラーケース
     console.error(`  ✗ Could not extract valid content for ${sectionName}`);
     throw new Error(`Invalid response structure for section: ${sectionName}`);
   } catch (error) {
@@ -393,7 +467,7 @@ async function translatePricingSection(
   userId: string,
   pricingContent: any
 ): Promise<any> {
-  console.log('\n=== Translating pricing section with one-by-one plan processing ===');
+  console.log('\n=== Translating pricing section with simplified item-by-item processing ===');
 
   const plans = pricingContent.plans || [];
   if (plans.length === 0) {
@@ -403,49 +477,23 @@ async function translatePricingSection(
 
   console.log(`  Total plans to translate: ${plans.length}`);
 
-  const mergedResult: any = { pricing: { plans: [] } };
+  const translatedSectionFields = pricingContent.sectionTitle
+    ? await translateItem(userId, 'pricing-section-fields', {
+        sectionTitle: pricingContent.sectionTitle,
+        sectionSubtitle: pricingContent.sectionSubtitle || ''
+      })
+    : { sectionTitle: pricingContent.sectionTitle, sectionSubtitle: pricingContent.sectionSubtitle };
 
-  // 最初のプランで、プラン以外のフィールド（sectionTitle等）を初期化
-  let isFirstPlan = true;
+  const translatedPlans: any[] = [];
 
   for (let i = 0; i < plans.length; i++) {
     const featureCount = plans[i].features?.length || 0;
     console.log(`\n  [${i + 1}/${plans.length}] Translating plan: "${plans[i].name}" (${featureCount} features)...`);
 
-    const singlePlanContent = {
-      ...pricingContent,
-      plans: [plans[i]],
-    };
+    const translatedPlan = await translateItem(userId, `plan-${i}`, plans[i]);
 
-    const planResult = await translateSection(userId, 'pricing', singlePlanContent);
-
-    console.log(`  DEBUG: planResult structure:`, JSON.stringify(planResult, null, 2).substring(0, 500));
-
-    // planResult は { pricing: {...} } という構造を期待
-    if (planResult.pricing) {
-      // 最初のプランでは、pricing全体のフィールドをコピー
-      if (isFirstPlan) {
-        for (const key in planResult.pricing) {
-          if (key !== 'plans') {
-            mergedResult.pricing[key] = planResult.pricing[key];
-          }
-        }
-        console.log(`  ✓ Initialized pricing fields:`, Object.keys(mergedResult.pricing).filter(k => k !== 'plans').join(', '));
-        isFirstPlan = false;
-      }
-
-      // plansをマージ
-      if (planResult.pricing.plans && Array.isArray(planResult.pricing.plans)) {
-        console.log(`  DEBUG: Plan data to merge:`, JSON.stringify(planResult.pricing.plans[0], null, 2).substring(0, 300));
-        mergedResult.pricing.plans.push(...planResult.pricing.plans);
-        console.log(`  ✓ Added plan (total: ${mergedResult.pricing.plans.length}/${plans.length})`);
-      } else {
-        console.warn(`  ⚠ No plans array in result`);
-      }
-    } else {
-      console.warn(`  ⚠ Unexpected structure from translateSection for pricing plan ${i + 1}`);
-      console.warn(`  Available keys:`, Object.keys(planResult).join(', '));
-    }
+    console.log(`  ✓ Translated plan ${i}:`, JSON.stringify(translatedPlan, null, 2).substring(0, 300));
+    translatedPlans.push(translatedPlan);
 
     if (i < plans.length - 1) {
       console.log('  Waiting 5s before next pricing plan...');
@@ -453,14 +501,25 @@ async function translatePricingSection(
     }
   }
 
+  const mergedResult = {
+    pricing: {
+      ...translatedSectionFields,
+      plans: translatedPlans
+    }
+  };
+
   console.log(`\n  ✓ Pricing section completed`);
   console.log(`  Final merged pricing plans count: ${mergedResult.pricing.plans.length}`);
-  console.log(`  Final merged pricing sample:`, JSON.stringify(mergedResult.pricing, null, 2).substring(0, 600));
+  if (mergedResult.pricing.plans.length > 0) {
+    console.log(`  Final merged pricing sample:`, JSON.stringify(mergedResult.pricing, null, 2).substring(0, 600));
+  } else {
+    console.warn('  ⚠️ No plans were merged!');
+  }
   return mergedResult;
 }
 
 async function translateStaffSection(userId: string, staffContent: any): Promise<any> {
-  console.log('\n=== Translating staff section with one-by-one member processing ===');
+  console.log('\n=== Translating staff section with simplified item-by-item processing ===');
 
   const members = staffContent.members || [];
   if (members.length === 0) {
@@ -470,46 +529,23 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
 
   console.log(`  Total members to translate: ${members.length}`);
 
-  const mergedResult: any = { staff: { members: [] } };
+  const translatedSectionFields = staffContent.sectionTitle
+    ? await translateItem(userId, 'staff-section-fields', {
+        sectionTitle: staffContent.sectionTitle,
+        sectionSubtitle: staffContent.sectionSubtitle || ''
+      })
+    : { sectionTitle: staffContent.sectionTitle, sectionSubtitle: staffContent.sectionSubtitle };
 
-  // 最初のメンバーで、メンバー以外のフィールド（sectionTitle等）を初期化
-  let isFirstMember = true;
+  const translatedMembers: any[] = [];
 
   for (let i = 0; i < members.length; i++) {
     console.log(`\n  [${i + 1}/${members.length}] Translating member: "${members[i].name}"...`);
 
-    const singleMemberContent = {
-      ...staffContent,
-      members: [members[i]],
-    };
-
     try {
-      const memberResult = await translateSection(userId, 'staff', singleMemberContent);
+      const translatedMember = await translateItem(userId, `member-${i}`, members[i]);
 
-      // memberResult は { staff: {...} } という構造を期待
-      if (memberResult.staff) {
-        // 最初のメンバーでは、staff全体のフィールドをコピー
-        if (isFirstMember) {
-          for (const key in memberResult.staff) {
-            if (key !== 'members') {
-              mergedResult.staff[key] = memberResult.staff[key];
-            }
-          }
-          console.log(`  ✓ Initialized staff fields:`, Object.keys(mergedResult.staff).filter(k => k !== 'members').join(', '));
-          isFirstMember = false;
-        }
-
-        // membersをマージ
-        if (memberResult.staff.members && Array.isArray(memberResult.staff.members)) {
-          mergedResult.staff.members.push(...memberResult.staff.members);
-          console.log(`  ✓ Added member (total: ${mergedResult.staff.members.length}/${members.length})`);
-        } else {
-          console.warn(`  ⚠ No members array in result`);
-        }
-      } else {
-        console.warn(`  ⚠ Unexpected structure from translateSection for staff member ${i + 1}`);
-        console.warn(`  Available keys:`, Object.keys(memberResult).join(', '));
-      }
+      console.log(`  ✓ Translated member ${i}:`, JSON.stringify(translatedMember, null, 2).substring(0, 300));
+      translatedMembers.push(translatedMember);
 
       if (i < members.length - 1) {
         console.log('  Waiting 5s before next staff member...');
@@ -521,12 +557,19 @@ async function translateStaffSection(userId: string, staffContent: any): Promise
     }
   }
 
+  const mergedResult = {
+    staff: {
+      ...translatedSectionFields,
+      members: translatedMembers
+    }
+  };
+
   console.log(`\n  ✓ Staff section completed`);
   return mergedResult;
 }
 
 async function translateReviewsSection(userId: string, reviewsContent: any): Promise<any> {
-  console.log('\n=== Translating reviews section with one-by-one review processing ===');
+  console.log('\n=== Translating reviews section with simplified item-by-item processing ===');
 
   const reviews = reviewsContent.reviews || [];
   if (reviews.length === 0) {
@@ -536,45 +579,23 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
 
   console.log(`  Total reviews to translate: ${reviews.length}`);
 
-  const mergedResult: any = { reviews: { reviews: [] } };
+  const translatedSectionFields = reviewsContent.sectionTitle
+    ? await translateItem(userId, 'reviews-section-fields', {
+        sectionTitle: reviewsContent.sectionTitle,
+        sectionSubtitle: reviewsContent.sectionSubtitle || ''
+      })
+    : { sectionTitle: reviewsContent.sectionTitle, sectionSubtitle: reviewsContent.sectionSubtitle };
 
-  let isFirstReview = true;
+  const translatedReviews: any[] = [];
 
   for (let i = 0; i < reviews.length; i++) {
     console.log(`\n  [${i + 1}/${reviews.length}] Translating review from: "${reviews[i].name}"...`);
 
-    const singleReviewContent = {
-      ...reviewsContent,
-      reviews: [reviews[i]],
-    };
-
     try {
-      const reviewResult = await translateSection(userId, 'reviews', singleReviewContent);
+      const translatedReview = await translateItem(userId, `review-${i}`, reviews[i]);
 
-      console.log(`  DEBUG: reviewResult structure:`, JSON.stringify(reviewResult, null, 2).substring(0, 500));
-
-      if (reviewResult.reviews) {
-        if (isFirstReview) {
-          for (const key in reviewResult.reviews) {
-            if (key !== 'reviews') {
-              mergedResult.reviews[key] = reviewResult.reviews[key];
-            }
-          }
-          console.log(`  ✓ Initialized reviews fields:`, Object.keys(mergedResult.reviews).filter(k => k !== 'reviews').join(', '));
-          isFirstReview = false;
-        }
-
-        if (reviewResult.reviews.reviews && Array.isArray(reviewResult.reviews.reviews)) {
-          console.log(`  DEBUG: Review data to merge:`, JSON.stringify(reviewResult.reviews.reviews[0], null, 2).substring(0, 300));
-          mergedResult.reviews.reviews.push(...reviewResult.reviews.reviews);
-          console.log(`  ✓ Added review (total: ${mergedResult.reviews.reviews.length}/${reviews.length})`);
-        } else {
-          console.warn(`  ⚠ No reviews array in result`);
-        }
-      } else {
-        console.warn(`  ⚠ Unexpected structure from translateSection for reviews ${i + 1}`);
-        console.warn(`  Available keys:`, Object.keys(reviewResult).join(', '));
-      }
+      console.log(`  ✓ Translated review ${i}:`, JSON.stringify(translatedReview, null, 2).substring(0, 300));
+      translatedReviews.push(translatedReview);
 
       if (i < reviews.length - 1) {
         console.log('  Waiting 5s before next review...');
@@ -586,14 +607,25 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
     }
   }
 
+  const mergedResult = {
+    reviews: {
+      ...translatedSectionFields,
+      reviews: translatedReviews
+    }
+  };
+
   console.log(`\n  ✓ Reviews section completed`);
   console.log(`  Final merged reviews count: ${mergedResult.reviews.reviews.length}`);
-  console.log(`  Final merged reviews sample:`, JSON.stringify(mergedResult.reviews, null, 2).substring(0, 600));
+  if (mergedResult.reviews.reviews.length > 0) {
+    console.log(`  Final merged reviews sample:`, JSON.stringify(mergedResult.reviews, null, 2).substring(0, 600));
+  } else {
+    console.warn('  ⚠️ No reviews were merged!');
+  }
   return mergedResult;
 }
 
 async function translateAccessSection(userId: string, accessContent: any): Promise<any> {
-  console.log('\n=== Translating access section with specialized processing ===');
+  console.log('\n=== Translating access section with simplified item-by-item processing ===');
 
   const methods = accessContent.transportation?.methods || [];
   if (methods.length === 0) {
@@ -603,52 +635,29 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
 
   console.log(`  Total transportation methods to translate: ${methods.length}`);
 
-  const mergedResult: any = { access: {} };
+  const baseFields = {
+    sectionTitle: accessContent.sectionTitle,
+    sectionSubtitle: accessContent.sectionSubtitle,
+    address: accessContent.address,
+    mapEmbedUrl: accessContent.mapEmbedUrl,
+    parking: accessContent.parking
+  };
 
-  let isFirstMethod = true;
+  const translatedBaseFields = await translateItem(userId, 'access-base-fields', baseFields);
+  const translatedTransportationTitle = await translateItem(userId, 'access-transportation-title', {
+    title: accessContent.transportation.title
+  });
+
+  const translatedMethods: any[] = [];
 
   for (let i = 0; i < methods.length; i++) {
     console.log(`\n  [${i + 1}/${methods.length}] Translating method: "${methods[i].type}"...`);
 
-    const singleMethodContent = {
-      ...accessContent,
-      transportation: {
-        title: accessContent.transportation.title,
-        methods: [methods[i]],
-      },
-    };
-
     try {
-      const methodResult = await translateSection(userId, 'access', singleMethodContent);
+      const translatedMethod = await translateItem(userId, `method-${i}`, methods[i]);
 
-      console.log(`  DEBUG: methodResult structure:`, JSON.stringify(methodResult, null, 2).substring(0, 500));
-
-      if (methodResult.access) {
-        if (isFirstMethod) {
-          for (const key in methodResult.access) {
-            if (key !== 'transportation') {
-              mergedResult.access[key] = methodResult.access[key];
-            }
-          }
-          mergedResult.access.transportation = {
-            title: methodResult.access.transportation?.title || accessContent.transportation.title,
-            methods: [],
-          };
-          console.log(`  ✓ Initialized access fields:`, Object.keys(mergedResult.access).join(', '));
-          isFirstMethod = false;
-        }
-
-        if (methodResult.access.transportation?.methods && Array.isArray(methodResult.access.transportation.methods)) {
-          console.log(`  DEBUG: Method data to merge:`, JSON.stringify(methodResult.access.transportation.methods[0], null, 2).substring(0, 300));
-          mergedResult.access.transportation.methods.push(...methodResult.access.transportation.methods);
-          console.log(`  ✓ Added method (total: ${mergedResult.access.transportation.methods.length}/${methods.length})`);
-        } else {
-          console.warn(`  ⚠ No transportation methods in result`);
-        }
-      } else {
-        console.warn(`  ⚠ Unexpected structure from translateSection for access method ${i + 1}`);
-        console.warn(`  Available keys:`, Object.keys(methodResult).join(', '));
-      }
+      console.log(`  ✓ Translated method ${i}:`, JSON.stringify(translatedMethod, null, 2).substring(0, 300));
+      translatedMethods.push(translatedMethod);
 
       if (i < methods.length - 1) {
         console.log('  Waiting 5s before next transportation method...');
@@ -660,9 +669,23 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
     }
   }
 
+  const mergedResult = {
+    access: {
+      ...translatedBaseFields,
+      transportation: {
+        ...translatedTransportationTitle,
+        methods: translatedMethods
+      }
+    }
+  };
+
   console.log(`\n  ✓ Access section completed`);
   console.log(`  Final merged access methods count: ${mergedResult.access.transportation.methods.length}`);
-  console.log(`  Final merged access sample:`, JSON.stringify(mergedResult.access, null, 2).substring(0, 600));
+  if (mergedResult.access.transportation.methods.length > 0) {
+    console.log(`  Final merged access sample:`, JSON.stringify(mergedResult.access, null, 2).substring(0, 600));
+  } else {
+    console.warn('  ⚠️ No access methods were merged!');
+  }
   return mergedResult;
 }
 
@@ -1015,18 +1038,44 @@ export async function translateAndSave(
     console.log('\n=== Final Save Data Structure Check ===');
     if (savePayload.content.pricing?.plans) {
       console.log('Pricing plans count:', savePayload.content.pricing.plans.length);
-      console.log('First plan sample:', JSON.stringify(savePayload.content.pricing.plans[0], null, 2).substring(0, 500));
+      if (savePayload.content.pricing.plans.length > 0) {
+        console.log('First plan sample:', JSON.stringify(savePayload.content.pricing.plans[0], null, 2).substring(0, 500));
+      } else {
+        console.warn('⚠️ Pricing plans array is EMPTY!');
+      }
+    } else {
+      console.warn('⚠️ Pricing section or plans array is missing!');
     }
+
     if (savePayload.content.reviews?.reviews) {
       console.log('Reviews count:', savePayload.content.reviews.reviews.length);
-      console.log('First review sample:', JSON.stringify(savePayload.content.reviews.reviews[0], null, 2).substring(0, 300));
+      if (savePayload.content.reviews.reviews.length > 0) {
+        console.log('First review sample:', JSON.stringify(savePayload.content.reviews.reviews[0], null, 2).substring(0, 300));
+      } else {
+        console.warn('⚠️ Reviews array is EMPTY!');
+      }
+    } else {
+      console.warn('⚠️ Reviews section or reviews array is missing!');
     }
+
     if (savePayload.content.access?.transportation?.methods) {
       console.log('Access methods count:', savePayload.content.access.transportation.methods.length);
-      console.log('First method sample:', JSON.stringify(savePayload.content.access.transportation.methods[0], null, 2).substring(0, 300));
+      if (savePayload.content.access.transportation.methods.length > 0) {
+        console.log('First method sample:', JSON.stringify(savePayload.content.access.transportation.methods[0], null, 2).substring(0, 300));
+      } else {
+        console.warn('⚠️ Access methods array is EMPTY!');
+      }
+    } else {
+      console.warn('⚠️ Access section or methods array is missing!');
     }
+
     if (savePayload.content.staff?.members) {
       console.log('Staff members count:', savePayload.content.staff.members.length);
+      if (savePayload.content.staff.members.length === 0) {
+        console.warn('⚠️ Staff members array is EMPTY!');
+      }
+    } else {
+      console.warn('⚠️ Staff section or members array is missing!');
     }
     console.log('========================================\n');
 
