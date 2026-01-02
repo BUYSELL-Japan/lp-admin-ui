@@ -419,6 +419,8 @@ async function translatePricingSection(
 
     const planResult = await translateSection(userId, 'pricing', singlePlanContent);
 
+    console.log(`  DEBUG: planResult structure:`, JSON.stringify(planResult, null, 2).substring(0, 500));
+
     // planResult は { pricing: {...} } という構造を期待
     if (planResult.pricing) {
       // 最初のプランでは、pricing全体のフィールドをコピー
@@ -434,6 +436,7 @@ async function translatePricingSection(
 
       // plansをマージ
       if (planResult.pricing.plans && Array.isArray(planResult.pricing.plans)) {
+        console.log(`  DEBUG: Plan data to merge:`, JSON.stringify(planResult.pricing.plans[0], null, 2).substring(0, 300));
         mergedResult.pricing.plans.push(...planResult.pricing.plans);
         console.log(`  ✓ Added plan (total: ${mergedResult.pricing.plans.length}/${plans.length})`);
       } else {
@@ -451,6 +454,8 @@ async function translatePricingSection(
   }
 
   console.log(`\n  ✓ Pricing section completed`);
+  console.log(`  Final merged pricing plans count: ${mergedResult.pricing.plans.length}`);
+  console.log(`  Final merged pricing sample:`, JSON.stringify(mergedResult.pricing, null, 2).substring(0, 600));
   return mergedResult;
 }
 
@@ -546,6 +551,8 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
     try {
       const reviewResult = await translateSection(userId, 'reviews', singleReviewContent);
 
+      console.log(`  DEBUG: reviewResult structure:`, JSON.stringify(reviewResult, null, 2).substring(0, 500));
+
       if (reviewResult.reviews) {
         if (isFirstReview) {
           for (const key in reviewResult.reviews) {
@@ -558,6 +565,7 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
         }
 
         if (reviewResult.reviews.reviews && Array.isArray(reviewResult.reviews.reviews)) {
+          console.log(`  DEBUG: Review data to merge:`, JSON.stringify(reviewResult.reviews.reviews[0], null, 2).substring(0, 300));
           mergedResult.reviews.reviews.push(...reviewResult.reviews.reviews);
           console.log(`  ✓ Added review (total: ${mergedResult.reviews.reviews.length}/${reviews.length})`);
         } else {
@@ -579,6 +587,8 @@ async function translateReviewsSection(userId: string, reviewsContent: any): Pro
   }
 
   console.log(`\n  ✓ Reviews section completed`);
+  console.log(`  Final merged reviews count: ${mergedResult.reviews.reviews.length}`);
+  console.log(`  Final merged reviews sample:`, JSON.stringify(mergedResult.reviews, null, 2).substring(0, 600));
   return mergedResult;
 }
 
@@ -611,6 +621,8 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
     try {
       const methodResult = await translateSection(userId, 'access', singleMethodContent);
 
+      console.log(`  DEBUG: methodResult structure:`, JSON.stringify(methodResult, null, 2).substring(0, 500));
+
       if (methodResult.access) {
         if (isFirstMethod) {
           for (const key in methodResult.access) {
@@ -627,6 +639,7 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
         }
 
         if (methodResult.access.transportation?.methods && Array.isArray(methodResult.access.transportation.methods)) {
+          console.log(`  DEBUG: Method data to merge:`, JSON.stringify(methodResult.access.transportation.methods[0], null, 2).substring(0, 300));
           mergedResult.access.transportation.methods.push(...methodResult.access.transportation.methods);
           console.log(`  ✓ Added method (total: ${mergedResult.access.transportation.methods.length}/${methods.length})`);
         } else {
@@ -648,6 +661,8 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
   }
 
   console.log(`\n  ✓ Access section completed`);
+  console.log(`  Final merged access methods count: ${mergedResult.access.transportation.methods.length}`);
+  console.log(`  Final merged access sample:`, JSON.stringify(mergedResult.access, null, 2).substring(0, 600));
   return mergedResult;
 }
 
@@ -925,6 +940,7 @@ export async function translateAndSave(
       // actualData が { [sectionName]: {...} } の形式の場合、その中身を取り出す
       if (actualData[sectionName] && typeof actualData[sectionName] === 'object') {
         console.log(`  ✓ Direct section match found for ${sectionName}`);
+        console.log(`  DEBUG: Section data sample:`, JSON.stringify(actualData[sectionName], null, 2).substring(0, 800));
         mergedContent[sectionName] = actualData[sectionName];
       }
       // actualData が複数セクションを含む場合（バッチ処理の結果など）
@@ -936,6 +952,7 @@ export async function translateAndSave(
             console.log(`  Skipping invalid key: ${secName}`);
             continue;
           }
+          console.log(`  DEBUG: Merging section ${secName}, data sample:`, JSON.stringify(actualData[secName], null, 2).substring(0, 400));
           mergedContent[secName] = actualData[secName];
         }
       }
@@ -966,6 +983,19 @@ export async function translateAndSave(
             const arr = getNestedValue(section, field);
             if (Array.isArray(arr)) {
               console.log(`  ${sectionName}.${field}: ${arr.length} items`);
+              if (arr.length > 0) {
+                console.log(`    Sample item structure:`, Object.keys(arr[0]).join(', '));
+                // 各アイテムの翻訳状況を確認
+                const firstItem = arr[0];
+                for (const key in firstItem) {
+                  if (typeof firstItem[key] === 'object' && firstItem[key] !== null) {
+                    const langs = Object.keys(firstItem[key]);
+                    if (langs.includes('ja') || langs.includes('en')) {
+                      console.log(`      ${key}: multilingual (${langs.join(', ')})`);
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -980,6 +1010,25 @@ export async function translateAndSave(
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
     console.log('Save payload sections:', Object.keys(savePayload.content).join(', '));
+
+    // 保存前に主要セクションのデータ構造を確認
+    console.log('\n=== Final Save Data Structure Check ===');
+    if (savePayload.content.pricing?.plans) {
+      console.log('Pricing plans count:', savePayload.content.pricing.plans.length);
+      console.log('First plan sample:', JSON.stringify(savePayload.content.pricing.plans[0], null, 2).substring(0, 500));
+    }
+    if (savePayload.content.reviews?.reviews) {
+      console.log('Reviews count:', savePayload.content.reviews.reviews.length);
+      console.log('First review sample:', JSON.stringify(savePayload.content.reviews.reviews[0], null, 2).substring(0, 300));
+    }
+    if (savePayload.content.access?.transportation?.methods) {
+      console.log('Access methods count:', savePayload.content.access.transportation.methods.length);
+      console.log('First method sample:', JSON.stringify(savePayload.content.access.transportation.methods[0], null, 2).substring(0, 300));
+    }
+    if (savePayload.content.staff?.members) {
+      console.log('Staff members count:', savePayload.content.staff.members.length);
+    }
+    console.log('========================================\n');
 
     const payloadString = JSON.stringify(savePayload);
     console.log(`Payload size: ${payloadString.length} characters`);
