@@ -152,7 +152,7 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
 }
 
 // 多言語オブジェクトから日本語のみを抽出する関数
-function extractJapanese(obj: any): any {
+function extractJapanese(obj: any, depth: number = 0): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -164,7 +164,13 @@ function extractJapanese(obj: any): any {
 
   // 配列の場合は各要素を再帰的に処理
   if (Array.isArray(obj)) {
-    return obj.map(item => extractJapanese(item));
+    return obj.map(item => extractJapanese(item, depth + 1));
+  }
+
+  // translatedData ラッパーを展開
+  if (obj.translatedData && typeof obj.translatedData === 'object') {
+    console.log(`  [Depth ${depth}] Found translatedData wrapper, unwrapping...`);
+    return extractJapanese(obj.translatedData, depth + 1);
   }
 
   // 多言語オブジェクトかチェック（ja, en, ko, zh-tw のキーを持つ）
@@ -175,13 +181,20 @@ function extractJapanese(obj: any): any {
 
   if (isMultilingual) {
     // 日本語の値を返す
+    if (depth === 0) {
+      console.log(`  [Depth ${depth}] Found multilingual object, extracting Japanese`);
+    }
     return obj.ja;
   }
 
   // 通常のオブジェクトの場合は各プロパティを再帰的に処理
   const result: any = {};
   for (const key in obj) {
-    result[key] = extractJapanese(obj[key]);
+    // success などのメタデータフィールドはスキップ
+    if (key === 'success' || key === 'storeId' || key === 'section' || key === 'targetLanguages') {
+      continue;
+    }
+    result[key] = extractJapanese(obj[key], depth + 1);
   }
   return result;
 }
@@ -235,8 +248,10 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     }
 
     console.log('✓ Extracting Japanese only from multilingual data');
+    console.log('Sample structure before extraction (hero):', JSON.stringify(contentData.hero, null, 2).substring(0, 500));
     const japaneseOnlyData = extractJapanese(contentData);
     console.log('✓ Japanese data extracted successfully');
+    console.log('Sample structure after extraction (hero):', JSON.stringify(japaneseOnlyData.hero, null, 2).substring(0, 500));
     return japaneseOnlyData;
   } catch (error) {
     console.error('Error fetching section data:', error);
