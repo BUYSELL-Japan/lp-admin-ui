@@ -217,7 +217,7 @@ async function translateItem(
     storeId: userId,
     section: itemId,
     content: itemContent,
-    targetLanguages: ['en', 'zh-tw', 'ko']
+    targetLanguages: ['en', 'zh', 'ko']
   };
 
   try {
@@ -299,7 +299,7 @@ async function translateSection(
     storeId: userId,
     section: sectionName,
     content: { [sectionName]: sectionContent },
-    targetLanguages: ['en', 'zh-tw', 'ko']
+    targetLanguages: ['en', 'zh', 'ko']
   };
 
   try {
