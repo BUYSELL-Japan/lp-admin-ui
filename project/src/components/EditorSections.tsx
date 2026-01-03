@@ -63,7 +63,7 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
         <input
           type="text"
           value={headerData.logo.text || ''}
-          onChange={(e) => onUpdate({ logo: { text: e.target.value } })}
+          onChange={(e) => onUpdate({ logo: { text: e.target.value }, navigation: fullNavigation })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -91,7 +91,7 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
                     onChange={(e) => {
                       const newNavigation = [...fullNavigation];
                       newNavigation[index] = { ...item, label: e.target.value };
-                      onUpdate({ navigation: newNavigation });
+                      onUpdate({ logo: headerData.logo, navigation: newNavigation });
                     }}
                     className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
                   />
