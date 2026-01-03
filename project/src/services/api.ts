@@ -199,8 +199,26 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('✓ Returning multilingual data as-is (object format with ja, en, zh-tw, ko)');
-    return contentData;
+    // Extract data from translation API response format if present
+    const unwrappedData: any = {};
+    let hasUnwrapped = false;
+    for (const sectionName in contentData) {
+      const sectionValue = contentData[sectionName];
+      // Check if this section has the translation API response format
+      if (sectionValue && typeof sectionValue === 'object' &&
+          sectionValue.translatedData && sectionValue.success !== undefined) {
+        console.log(`✓ Unwrapping translatedData for section: ${sectionName}`);
+        unwrappedData[sectionName] = sectionValue.translatedData;
+        hasUnwrapped = true;
+      } else {
+        unwrappedData[sectionName] = sectionValue;
+      }
+    }
+
+    const finalData = hasUnwrapped ? unwrappedData : contentData;
+    console.log('✓ Returning multilingual data (object format with ja, en, zh-tw, ko)');
+    console.log('Sample section keys:', Object.keys(finalData).slice(0, 3).join(', '));
+    return finalData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
