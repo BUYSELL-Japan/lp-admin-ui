@@ -540,20 +540,58 @@ async function translateHeaderSection(
 
   console.log(`  Total navigation items to translate: ${navigation.length}`);
 
-  const translatedLogo = headerContent.logo
-    ? await translateItem(userId, 'header-logo', { text: headerContent.logo.text })
-    : { text: headerContent.logo?.text || '' };
+  // Extract logo text from translatedData wrapper if present
+  let logoText = '';
+  if (headerContent.logo) {
+    if (headerContent.logo.translatedData?.text) {
+      logoText = headerContent.logo.translatedData.text;
+      console.log('  Extracted logo text from translatedData:', logoText);
+    } else if (headerContent.logo.text) {
+      logoText = headerContent.logo.text;
+      console.log('  Using direct logo text:', logoText);
+    }
+  }
+
+  if (!logoText) {
+    console.warn('  ⚠ Logo text is empty, skipping logo translation');
+  }
+
+  const translatedLogo = logoText
+    ? await translateItem(userId, 'header-logo', { text: logoText })
+    : { text: logoText };
 
   const translatedNavigationItems: any[] = [];
 
   for (let i = 0; i < navigation.length; i++) {
-    console.log(`\n  [${i + 1}/${navigation.length}] Translating nav item: "${navigation[i].label}" (id: ${navigation[i].id})...`);
+    // Extract label from translatedData wrapper if present
+    let navLabel = '';
+    const navItem = navigation[i];
+
+    if (navItem.translatedData?.label) {
+      navLabel = navItem.translatedData.label;
+    } else if (typeof navItem.label === 'object' && navItem.label.label) {
+      // Handle nested label structure
+      navLabel = navItem.label.label;
+    } else if (navItem.label) {
+      navLabel = navItem.label;
+    }
+
+    console.log(`\n  [${i + 1}/${navigation.length}] Translating nav item: "${navLabel}" (id: ${navItem.id})...`);
+
+    if (!navLabel) {
+      console.warn(`  ⚠ Nav item ${i} has empty label, skipping translation`);
+      translatedNavigationItems.push({
+        id: navItem.id,
+        label: navLabel
+      });
+      continue;
+    }
 
     try {
-      const translatedNavItem = await translateItem(userId, `nav-${i}`, { label: navigation[i].label });
+      const translatedNavItem = await translateItem(userId, `nav-${i}`, { label: navLabel });
 
       const mergedNavItem = {
-        id: navigation[i].id,
+        id: navItem.id,
         ...translatedNavItem
       };
 
