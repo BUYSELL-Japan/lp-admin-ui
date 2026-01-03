@@ -149,12 +149,22 @@ function App() {
           console.log('=====================================');
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
-            const merged = {
-              ...prev,
-              ...savedData,
-            };
+            const merged = { ...prev };
+
+            Object.keys(savedData).forEach(key => {
+              merged[key] = {
+                ...prev[key],
+                ...savedData[key],
+              };
+            });
+
             console.log('Merged data keys:', Object.keys(merged));
             console.log('Merged hero sample:', merged.hero);
+            console.log('=== After Deep Merge ===');
+            console.log('pricing plans exists:', merged.pricing?.plans ? 'Yes' : 'No');
+            console.log('staff members exists:', merged.staff?.members ? 'Yes' : 'No');
+            console.log('reviews reviews exists:', merged.reviews?.reviews ? 'Yes' : 'No');
+            console.log('========================');
             return merged;
           });
         } else {
