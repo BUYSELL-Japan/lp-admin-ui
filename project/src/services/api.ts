@@ -463,6 +463,62 @@ async function translateCompanySection(
   return mergedResult;
 }
 
+async function translateHeaderSection(
+  userId: string,
+  headerContent: any
+): Promise<any> {
+  console.log('\n=== Translating header section with simplified item-by-item processing ===');
+
+  const navigation = headerContent.navigation || [];
+  if (navigation.length === 0) {
+    console.log('  No navigation items found, translating entire header section');
+    return translateSection(userId, 'header', headerContent);
+  }
+
+  console.log(`  Total navigation items to translate: ${navigation.length}`);
+
+  const translatedLogo = headerContent.logo
+    ? await translateItem(userId, 'header-logo', { text: headerContent.logo.text })
+    : { text: headerContent.logo?.text || '' };
+
+  const translatedNavigationItems: any[] = [];
+
+  for (let i = 0; i < navigation.length; i++) {
+    console.log(`\n  [${i + 1}/${navigation.length}] Translating nav item: "${navigation[i].label}" (id: ${navigation[i].id})...`);
+
+    try {
+      const translatedNavItem = await translateItem(userId, `nav-${i}`, { label: navigation[i].label });
+
+      const mergedNavItem = {
+        id: navigation[i].id,
+        ...translatedNavItem
+      };
+
+      console.log(`  ✓ Translated nav item ${i}:`, JSON.stringify(mergedNavItem, null, 2).substring(0, 200));
+      translatedNavigationItems.push(mergedNavItem);
+
+      if (i < navigation.length - 1) {
+        console.log('  Waiting 3s before next navigation item...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to translate navigation item ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  const mergedResult = {
+    header: {
+      logo: translatedLogo,
+      navigation: translatedNavigationItems
+    }
+  };
+
+  console.log(`\n  ✓ Header section completed`);
+  console.log(`  Final merged navigation items count: ${mergedResult.header.navigation.length}`);
+  return mergedResult;
+}
+
 async function translatePricingSection(
   userId: string,
   pricingContent: any
@@ -765,6 +821,11 @@ async function translateSectionInBatches(
   sectionContent: any
 ): Promise<any> {
   console.log(`\n=== translateSectionInBatches: ${sectionName} ===`);
+
+  if (sectionName === 'header') {
+    console.log(`${sectionName}: Using specialized header translation function`);
+    return translateHeaderSection(userId, sectionContent);
+  }
 
   if (sectionName === 'company') {
     console.log(`${sectionName}: Using specialized company translation function`);
