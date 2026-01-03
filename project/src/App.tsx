@@ -140,36 +140,11 @@ function App() {
         if (savedData) {
           console.log('Saved data keys:', Object.keys(savedData));
           console.log('Saved data hero sample:', savedData.hero);
-
-          // データ構造を確認して、translatedData がラップされている場合は展開する
-          const processedData: any = {};
-          for (const section in savedData) {
-            const sectionData = savedData[section];
-            if (sectionData && typeof sectionData === 'object' && 'translatedData' in sectionData) {
-              // translatedData でラップされている場合は展開
-              console.log(`Unwrapping translatedData for section: ${section}`);
-              const unwrapped = sectionData.translatedData;
-
-              // translatedData の中にセクション名でさらにネストされている場合も展開
-              if (unwrapped && typeof unwrapped === 'object' && unwrapped[section]) {
-                console.log(`  Further unwrapping nested section: ${section}`);
-                processedData[section] = unwrapped[section];
-              } else {
-                processedData[section] = unwrapped;
-              }
-            } else {
-              // 通常のデータ構造
-              processedData[section] = sectionData;
-            }
-          }
-
-          console.log('Processed data keys:', Object.keys(processedData));
-          console.log('Processed hero sample:', processedData.hero);
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
             const merged = {
               ...prev,
-              ...processedData,
+              ...savedData,
             };
             console.log('Merged data keys:', Object.keys(merged));
             console.log('Merged hero sample:', merged.hero);

@@ -151,6 +151,41 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
   }
 }
 
+// 多言語オブジェクトから日本語のみを抽出する関数
+function extractJapanese(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  // プリミティブ型はそのまま返す
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+
+  // 配列の場合は各要素を再帰的に処理
+  if (Array.isArray(obj)) {
+    return obj.map(item => extractJapanese(item));
+  }
+
+  // 多言語オブジェクトかチェック（ja, en, ko, zh-tw のキーを持つ）
+  const keys = Object.keys(obj);
+  const isMultilingual = keys.includes('ja') && (
+    keys.includes('en') || keys.includes('ko') || keys.includes('zh-tw')
+  );
+
+  if (isMultilingual) {
+    // 日本語の値を返す
+    return obj.ja;
+  }
+
+  // 通常のオブジェクトの場合は各プロパティを再帰的に処理
+  const result: any = {};
+  for (const key in obj) {
+    result[key] = extractJapanese(obj[key]);
+  }
+  return result;
+}
+
 export async function getSectionData(storeId: string): Promise<any | null> {
   try {
     const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
@@ -199,8 +234,10 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('✓ Returning multilingual data as-is (object format with ja, en, zh-tw, ko)');
-    return contentData;
+    console.log('✓ Extracting Japanese only from multilingual data');
+    const japaneseOnlyData = extractJapanese(contentData);
+    console.log('✓ Japanese data extracted successfully');
+    return japaneseOnlyData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
