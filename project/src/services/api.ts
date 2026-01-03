@@ -152,7 +152,7 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
 }
 
 // 多言語オブジェクトから日本語のみを抽出する関数
-function extractJapanese(obj: any, depth: number = 0): any {
+function extractJapanese(obj: any): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -164,37 +164,27 @@ function extractJapanese(obj: any, depth: number = 0): any {
 
   // 配列の場合は各要素を再帰的に処理
   if (Array.isArray(obj)) {
-    return obj.map(item => extractJapanese(item, depth + 1));
-  }
-
-  // translatedData ラッパーを展開
-  if (obj.translatedData && typeof obj.translatedData === 'object') {
-    console.log(`  [Depth ${depth}] Found translatedData wrapper, unwrapping...`);
-    return extractJapanese(obj.translatedData, depth + 1);
+    return obj.map(item => extractJapanese(item));
   }
 
   // 多言語オブジェクトかチェック（ja, en, ko, zh-tw のキーを持つ）
   const keys = Object.keys(obj);
-  const isMultilingual = keys.includes('ja') && (
-    keys.includes('en') || keys.includes('ko') || keys.includes('zh-tw')
-  );
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const hasMultipleLanguages = languageKeys.filter(lang => keys.includes(lang)).length >= 2;
 
-  if (isMultilingual) {
-    // 日本語の値を返す
-    if (depth === 0) {
-      console.log(`  [Depth ${depth}] Found multilingual object, extracting Japanese`);
-    }
-    return obj.ja;
+  if (hasMultipleLanguages && keys.includes('ja')) {
+    // 日本語の値を返す（空文字の場合は空文字を返す）
+    return obj.ja !== undefined ? obj.ja : '';
   }
 
   // 通常のオブジェクトの場合は各プロパティを再帰的に処理
   const result: any = {};
   for (const key in obj) {
-    // success などのメタデータフィールドはスキップ
+    // メタデータフィールドはスキップ
     if (key === 'success' || key === 'storeId' || key === 'section' || key === 'targetLanguages') {
       continue;
     }
-    result[key] = extractJapanese(obj[key], depth + 1);
+    result[key] = extractJapanese(obj[key]);
   }
   return result;
 }
@@ -248,10 +238,32 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     }
 
     console.log('✓ Extracting Japanese only from multilingual data');
-    console.log('Sample structure before extraction (hero):', JSON.stringify(contentData.hero, null, 2).substring(0, 500));
-    const japaneseOnlyData = extractJapanese(contentData);
+
+    // 各セクションの構造を正規化: {translatedData: {sectionName: {...}}} -> {...}
+    const normalizedData: any = {};
+    for (const sectionKey in contentData) {
+      const section = contentData[sectionKey];
+
+      // translatedDataラッパーがある場合
+      if (section && section.translatedData && typeof section.translatedData === 'object') {
+        // translatedData内にセクション名のキーがある場合（{translatedData: {hero: {...}}}）
+        if (section.translatedData[sectionKey]) {
+          normalizedData[sectionKey] = section.translatedData[sectionKey];
+        }
+        // translatedData内に直接データがある場合（{translatedData: {title: {...}, subtitle: {...}}}）
+        else {
+          normalizedData[sectionKey] = section.translatedData;
+        }
+      } else {
+        // translatedDataラッパーがない場合はそのまま
+        normalizedData[sectionKey] = section;
+      }
+    }
+
+    console.log('✓ Data normalized, extracting Japanese...');
+    const japaneseOnlyData = extractJapanese(normalizedData);
     console.log('✓ Japanese data extracted successfully');
-    console.log('Sample structure after extraction (hero):', JSON.stringify(japaneseOnlyData.hero, null, 2).substring(0, 500));
+    console.log('Sample hero data:', JSON.stringify(japaneseOnlyData.hero, null, 2).substring(0, 300));
     return japaneseOnlyData;
   } catch (error) {
     console.error('Error fetching section data:', error);
