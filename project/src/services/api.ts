@@ -220,8 +220,19 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       if (sectionValue && typeof sectionValue === 'object' &&
           sectionValue.translatedData && sectionValue.success !== undefined) {
         console.log(`✓ Unwrapping translatedData for section: ${sectionName}`);
-        console.log(`  translatedData keys:`, Object.keys(sectionValue.translatedData).slice(0, 5));
-        unwrappedData[sectionName] = sectionValue.translatedData;
+        const translatedData = sectionValue.translatedData;
+        console.log(`  translatedData keys:`, Object.keys(translatedData).slice(0, 10));
+
+        // Check if translatedData has the section name as a key (double-wrapped)
+        if (translatedData[sectionName]) {
+          console.log(`  → Found double-wrapped structure, extracting ${sectionName}`);
+          unwrappedData[sectionName] = translatedData[sectionName];
+        }
+        // Check if translatedData is already the section content (not wrapped)
+        else {
+          console.log(`  → translatedData is unwrapped, wrapping as ${sectionName}`);
+          unwrappedData[sectionName] = translatedData;
+        }
         hasUnwrapped = true;
       } else {
         unwrappedData[sectionName] = sectionValue;
@@ -231,11 +242,26 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     const finalData = hasUnwrapped ? unwrappedData : contentData;
     console.log('=== Final Data ===');
     console.log('Has unwrapped:', hasUnwrapped);
-    console.log('Final data keys:', Object.keys(finalData).slice(0, 5));
-    const sampleKey = Object.keys(finalData)[0];
-    if (sampleKey) {
-      console.log(`Sample ${sampleKey} (first 300 chars):`, JSON.stringify(finalData[sampleKey], null, 2).substring(0, 300));
+    console.log('Final data keys:', Object.keys(finalData).slice(0, 10));
+
+    // Log structure for key sections
+    if (finalData.news) {
+      console.log('news structure:', Object.keys(finalData.news).join(', '));
+      if (finalData.news.items) console.log('  news.items count:', finalData.news.items.length);
     }
+    if (finalData.staff) {
+      console.log('staff structure:', Object.keys(finalData.staff).join(', '));
+      if (finalData.staff.members) console.log('  staff.members count:', finalData.staff.members.length);
+    }
+    if (finalData.pricing) {
+      console.log('pricing structure:', Object.keys(finalData.pricing).join(', '));
+      if (finalData.pricing.plans) console.log('  pricing.plans count:', finalData.pricing.plans.length);
+    }
+    if (finalData.reviews) {
+      console.log('reviews structure:', Object.keys(finalData.reviews).join(', '));
+      if (finalData.reviews.reviews) console.log('  reviews.reviews count:', finalData.reviews.reviews.length);
+    }
+
     console.log('========================');
     return finalData;
   } catch (error) {
