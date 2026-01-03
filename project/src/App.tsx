@@ -140,6 +140,13 @@ function App() {
         if (savedData) {
           console.log('Saved data keys:', Object.keys(savedData));
           console.log('Saved data hero sample:', savedData.hero);
+          console.log('=== Checking problematic sections ===');
+          console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
+          console.log('staff:', JSON.stringify(savedData.staff, null, 2));
+          console.log('reviews:', JSON.stringify(savedData.reviews, null, 2));
+          console.log('company:', JSON.stringify(savedData.company, null, 2));
+          console.log('access:', JSON.stringify(savedData.access, null, 2));
+          console.log('=====================================');
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
             const merged = {
