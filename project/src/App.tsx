@@ -185,16 +185,31 @@ function App() {
 
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
-            const merged = {
-              ...prev,
-              ...japaneseData,
-            };
+            const merged: any = {};
+
+            for (const key in prev) {
+              if (japaneseData[key]) {
+                merged[key] = {
+                  ...prev[key],
+                  ...japaneseData[key],
+                };
+              } else {
+                merged[key] = prev[key];
+              }
+            }
+
+            for (const key in japaneseData) {
+              if (!merged[key]) {
+                merged[key] = japaneseData[key];
+              }
+            }
+
             console.log('Merged data keys:', Object.keys(merged));
 
             console.log('=== Merged Data Check ===');
             ['pricing', 'staff', 'reviews', 'company', 'access'].forEach(section => {
               if (merged[section]) {
-                console.log(`${section}:`, JSON.stringify(merged[section], null, 2).substring(0, 300));
+                console.log(`${section}:`, JSON.stringify(merged[section], null, 2).substring(0, 500));
               } else {
                 console.log(`${section}: NOT FOUND in merged`);
               }
