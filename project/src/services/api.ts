@@ -174,14 +174,23 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     console.log('=== API Response Debug ===');
     console.log('Raw result keys:', Object.keys(result));
     console.log('result.ContentData exists:', !!result.ContentData);
+    console.log('Full result object (first 1000 chars):', JSON.stringify(result, null, 2).substring(0, 1000));
     console.log('========================');
 
     let contentData = null;
 
     // DynamoDB returns data in ContentData field
     if (result.ContentData) {
-      console.log('✓ Returning ContentData from DynamoDB');
+      console.log('✓ Found ContentData from DynamoDB');
       contentData = result.ContentData;
+      console.log('ContentData type:', typeof contentData);
+      console.log('ContentData keys:', Object.keys(contentData || {}).slice(0, 5));
+
+      const firstKey = Object.keys(contentData || {})[0];
+      if (firstKey) {
+        console.log(`Sample ${firstKey} structure (first 500 chars):`, JSON.stringify(contentData[firstKey], null, 2).substring(0, 500));
+      }
+
       // Remove Status field as it's not part of section data
       if (contentData.Status) {
         delete contentData.Status;
@@ -199,15 +208,19 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
+    console.log('=== Processing ContentData ===');
     // Extract data from translation API response format if present
     const unwrappedData: any = {};
     let hasUnwrapped = false;
     for (const sectionName in contentData) {
       const sectionValue = contentData[sectionName];
+      console.log(`Checking section: ${sectionName}, type: ${typeof sectionValue}, has translatedData: ${sectionValue?.translatedData !== undefined}`);
+
       // Check if this section has the translation API response format
       if (sectionValue && typeof sectionValue === 'object' &&
           sectionValue.translatedData && sectionValue.success !== undefined) {
         console.log(`✓ Unwrapping translatedData for section: ${sectionName}`);
+        console.log(`  translatedData keys:`, Object.keys(sectionValue.translatedData).slice(0, 5));
         unwrappedData[sectionName] = sectionValue.translatedData;
         hasUnwrapped = true;
       } else {
@@ -216,8 +229,14 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     }
 
     const finalData = hasUnwrapped ? unwrappedData : contentData;
-    console.log('✓ Returning multilingual data (object format with ja, en, zh-tw, ko)');
-    console.log('Sample section keys:', Object.keys(finalData).slice(0, 3).join(', '));
+    console.log('=== Final Data ===');
+    console.log('Has unwrapped:', hasUnwrapped);
+    console.log('Final data keys:', Object.keys(finalData).slice(0, 5));
+    const sampleKey = Object.keys(finalData)[0];
+    if (sampleKey) {
+      console.log(`Sample ${sampleKey} (first 300 chars):`, JSON.stringify(finalData[sampleKey], null, 2).substring(0, 300));
+    }
+    console.log('========================');
     return finalData;
   } catch (error) {
     console.error('Error fetching section data:', error);
