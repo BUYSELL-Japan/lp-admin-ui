@@ -148,7 +148,15 @@ function App() {
             if (sectionData && typeof sectionData === 'object' && 'translatedData' in sectionData) {
               // translatedData でラップされている場合は展開
               console.log(`Unwrapping translatedData for section: ${section}`);
-              processedData[section] = sectionData.translatedData;
+              const unwrapped = sectionData.translatedData;
+
+              // translatedData の中にセクション名でさらにネストされている場合も展開
+              if (unwrapped && typeof unwrapped === 'object' && unwrapped[section]) {
+                console.log(`  Further unwrapping nested section: ${section}`);
+                processedData[section] = unwrapped[section];
+              } else {
+                processedData[section] = unwrapped;
+              }
             } else {
               // 通常のデータ構造
               processedData[section] = sectionData;
