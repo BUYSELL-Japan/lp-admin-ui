@@ -131,6 +131,26 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const extractJapaneseData = (data: any): any => {
+      if (!data || typeof data !== 'object') {
+        return data;
+      }
+
+      if (Array.isArray(data)) {
+        return data.map(item => extractJapaneseData(item));
+      }
+
+      if (data.ja !== undefined && data.en !== undefined && data['zh-tw'] !== undefined && data.ko !== undefined) {
+        return data.ja;
+      }
+
+      const result: any = {};
+      for (const key in data) {
+        result[key] = extractJapaneseData(data[key]);
+      }
+      return result;
+    };
+
     const loadSectionData = async () => {
       if (userId) {
         console.log('=== Loading Section Data ===');
@@ -140,11 +160,14 @@ function App() {
         if (savedData) {
           console.log('Saved data keys:', Object.keys(savedData));
           console.log('Saved data hero sample:', savedData.hero);
+          console.log('Extracting Japanese data from multilingual format');
+          const japaneseData = extractJapaneseData(savedData);
+          console.log('Extracted Japanese data hero sample:', japaneseData.hero);
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
             const merged = {
               ...prev,
-              ...savedData,
+              ...japaneseData,
             };
             console.log('Merged data keys:', Object.keys(merged));
             console.log('Merged hero sample:', merged.hero);
