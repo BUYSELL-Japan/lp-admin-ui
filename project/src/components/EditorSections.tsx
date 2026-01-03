@@ -25,15 +25,6 @@ interface EditorSectionProps {
 
 export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
   const headerData = data as HeaderData;
-
-  if (!headerData || !headerData.logo || !headerData.navigation) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        ヘッダーデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
@@ -85,21 +76,12 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
   const heroData = data as HeroData;
-
-  if (!heroData) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        ヒーローデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">タイトル</label>
         <textarea
-          value={heroData.title || ''}
+          value={heroData.title}
           onChange={(e) => onUpdate({ title: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           rows={3}
@@ -109,13 +91,13 @@ export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={heroData.subtitle || ''}
+          value={heroData.subtitle}
           onChange={(e) => onUpdate({ subtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <ImageUpload
-        value={heroData.backgroundImage || ''}
+        value={heroData.backgroundImage}
         onChange={(url) => onUpdate({ backgroundImage: url })}
         label="背景画像"
       />
@@ -125,22 +107,13 @@ export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function AboutEditor({ data, onUpdate }: EditorSectionProps) {
   const aboutData = data as AboutData;
-
-  if (!aboutData || !aboutData.features) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        こだわりデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={aboutData.sectionTitle || ''}
+          value={aboutData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -191,22 +164,13 @@ export function AboutEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
   const menuData = data as MenuData;
-
-  if (!menuData || !menuData.items) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        お品書きデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={menuData.sectionTitle || ''}
+          value={menuData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -215,7 +179,7 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={menuData.sectionSubtitle || ''}
+          value={menuData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -367,22 +331,13 @@ export function GalleryEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
   const staffData = data as StaffData;
-
-  if (!staffData || !staffData.members) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        スタッフデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={staffData.sectionTitle || ''}
+          value={staffData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -391,7 +346,7 @@ export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={staffData.sectionSubtitle || ''}
+          value={staffData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -457,22 +412,13 @@ export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
   const newsData = data as NewsData;
-
-  if (!newsData || !newsData.items) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        お知らせデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={newsData.sectionTitle || ''}
+          value={newsData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -481,7 +427,7 @@ export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={newsData.sectionSubtitle || ''}
+          value={newsData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -552,22 +498,13 @@ export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
   const storeData = data as StoreInfoData;
-
-  if (!storeData || !storeData.items) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        店舗情報データが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={storeData.sectionTitle || ''}
+          value={storeData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -610,22 +547,13 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
   const ctaData = data as CTAData;
-
-  if (!ctaData) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        CTAデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={ctaData.sectionTitle || ''}
+          value={ctaData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -634,7 +562,7 @@ export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={ctaData.sectionSubtitle || ''}
+          value={ctaData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -642,14 +570,14 @@ export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700">説明</label>
         <textarea
-          value={ctaData.description || ''}
+          value={ctaData.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
           rows={3}
         />
       </div>
       <ImageUpload
-        value={ctaData.backgroundImage || ''}
+        value={ctaData.backgroundImage}
         onChange={(url) => onUpdate({ backgroundImage: url })}
         label="背景画像"
       />
@@ -659,22 +587,13 @@ export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
   const pricingData = data as PricingData;
-
-  if (!pricingData || !pricingData.plans) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        コース・プランデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={pricingData.sectionTitle || ''}
+          value={pricingData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -683,7 +602,7 @@ export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={pricingData.sectionSubtitle || ''}
+          value={pricingData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -738,22 +657,13 @@ export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
   const footerData = data as FooterData;
-
-  if (!footerData || !footerData.businessHours || !footerData.social || !footerData.social.links) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        フッターデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">ロゴ</label>
         <input
           type="text"
-          value={footerData.logo || ''}
+          value={footerData.logo}
           onChange={(e) => onUpdate({ logo: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -761,7 +671,7 @@ export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700">説明</label>
         <textarea
-          value={footerData.description || ''}
+          value={footerData.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           rows={2}
@@ -773,7 +683,7 @@ export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
           <label className="block text-sm font-medium text-gray-700">タイトル</label>
           <input
             type="text"
-            value={footerData.businessHours.title || ''}
+            value={footerData.businessHours.title}
             onChange={(e) => onUpdate({
               businessHours: { ...footerData.businessHours, title: e.target.value }
             })}
@@ -869,22 +779,13 @@ export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
   const reviewsData = data as ReviewsData;
-
-  if (!reviewsData || !reviewsData.reviews) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        お客様の声データが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={reviewsData.sectionTitle || ''}
+          value={reviewsData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -893,7 +794,7 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={reviewsData.sectionSubtitle || ''}
+          value={reviewsData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -977,22 +878,13 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
   const companyData = data as CompanyData;
-
-  if (!companyData || !companyData.philosophy || !companyData.history || !companyData.history.timeline || !companyData.companyInfo || !companyData.companyInfo.items) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        事業所概要データが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={companyData.sectionTitle || ''}
+          value={companyData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1001,7 +893,7 @@ export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={companyData.sectionSubtitle || ''}
+          value={companyData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1133,22 +1025,13 @@ export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function AccessEditor({ data, onUpdate }: EditorSectionProps) {
   const accessData = data as AccessData;
-
-  if (!accessData || !accessData.parking || !accessData.transportation || !accessData.transportation.methods) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        アクセスデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={accessData.sectionTitle || ''}
+          value={accessData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1157,7 +1040,7 @@ export function AccessEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={accessData.sectionSubtitle || ''}
+          value={accessData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1281,22 +1164,13 @@ export function AccessEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function FAQEditor({ data, onUpdate }: EditorSectionProps) {
   const faqData = data as FAQData;
-
-  if (!faqData || !faqData.items) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        よくある質問データが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={faqData.sectionTitle || ''}
+          value={faqData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1305,7 +1179,7 @@ export function FAQEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={faqData.sectionSubtitle || ''}
+          value={faqData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1349,22 +1223,13 @@ export function FAQEditor({ data, onUpdate }: EditorSectionProps) {
 
 export function ContactEditor({ data, onUpdate }: EditorSectionProps) {
   const contactData = data as ContactData;
-
-  if (!contactData || !contactData.fields) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        お問い合わせデータが読み込まれていません
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={contactData.sectionTitle || ''}
+          value={contactData.sectionTitle}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1373,7 +1238,7 @@ export function ContactEditor({ data, onUpdate }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={contactData.sectionSubtitle || ''}
+          value={contactData.sectionSubtitle}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />

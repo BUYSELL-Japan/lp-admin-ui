@@ -131,27 +131,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const extractJapaneseData = (data: any, path = 'root'): any => {
-      if (!data || typeof data !== 'object') {
-        return data;
-      }
-
-      if (Array.isArray(data)) {
-        return data.map((item, index) => extractJapaneseData(item, `${path}[${index}]`));
-      }
-
-      if (data.ja !== undefined && data.en !== undefined && data['zh-tw'] !== undefined && data.ko !== undefined) {
-        console.log(`  Extracting Japanese at ${path}:`, data.ja);
-        return data.ja;
-      }
-
-      const result: any = {};
-      for (const key in data) {
-        result[key] = extractJapaneseData(data[key], `${path}.${key}`);
-      }
-      return result;
-    };
-
     const loadSectionData = async () => {
       if (userId) {
         console.log('=== Loading Section Data ===');
@@ -160,61 +139,15 @@ function App() {
         console.log('Saved data received:', savedData);
         if (savedData) {
           console.log('Saved data keys:', Object.keys(savedData));
-
-          // Log specific sections that are not displaying
-          console.log('=== Checking Problem Sections ===');
-          ['pricing', 'staff', 'reviews', 'company', 'access'].forEach(section => {
-            if (savedData[section]) {
-              console.log(`${section}:`, JSON.stringify(savedData[section], null, 2).substring(0, 500));
-            } else {
-              console.log(`${section}: NOT FOUND in savedData`);
-            }
-          });
-
-          console.log('Extracting Japanese data from multilingual format');
-          const japaneseData = extractJapaneseData(savedData);
-
-          console.log('=== Extracted Japanese Data ===');
-          ['pricing', 'staff', 'reviews', 'company', 'access'].forEach(section => {
-            if (japaneseData[section]) {
-              console.log(`${section}:`, JSON.stringify(japaneseData[section], null, 2).substring(0, 500));
-            } else {
-              console.log(`${section}: NOT FOUND in japaneseData`);
-            }
-          });
-
+          console.log('Saved data hero sample:', savedData.hero);
           console.log('Merging saved data with default data');
           setSectionData((prev) => {
-            const merged: any = {};
-
-            for (const key in prev) {
-              if (japaneseData[key]) {
-                merged[key] = {
-                  ...prev[key],
-                  ...japaneseData[key],
-                };
-              } else {
-                merged[key] = prev[key];
-              }
-            }
-
-            for (const key in japaneseData) {
-              if (!merged[key]) {
-                merged[key] = japaneseData[key];
-              }
-            }
-
+            const merged = {
+              ...prev,
+              ...savedData,
+            };
             console.log('Merged data keys:', Object.keys(merged));
-
-            console.log('=== Merged Data Check ===');
-            ['pricing', 'staff', 'reviews', 'company', 'access'].forEach(section => {
-              if (merged[section]) {
-                console.log(`${section}:`, JSON.stringify(merged[section], null, 2).substring(0, 500));
-              } else {
-                console.log(`${section}: NOT FOUND in merged`);
-              }
-            });
-
+            console.log('Merged hero sample:', merged.hero);
             return merged;
           });
         } else {

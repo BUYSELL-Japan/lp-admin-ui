@@ -174,23 +174,14 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     console.log('=== API Response Debug ===');
     console.log('Raw result keys:', Object.keys(result));
     console.log('result.ContentData exists:', !!result.ContentData);
-    console.log('Full result object (first 1000 chars):', JSON.stringify(result, null, 2).substring(0, 1000));
     console.log('========================');
 
     let contentData = null;
 
     // DynamoDB returns data in ContentData field
     if (result.ContentData) {
-      console.log('✓ Found ContentData from DynamoDB');
+      console.log('✓ Returning ContentData from DynamoDB');
       contentData = result.ContentData;
-      console.log('ContentData type:', typeof contentData);
-      console.log('ContentData keys:', Object.keys(contentData || {}).slice(0, 5));
-
-      const firstKey = Object.keys(contentData || {})[0];
-      if (firstKey) {
-        console.log(`Sample ${firstKey} structure (first 500 chars):`, JSON.stringify(contentData[firstKey], null, 2).substring(0, 500));
-      }
-
       // Remove Status field as it's not part of section data
       if (contentData.Status) {
         delete contentData.Status;
@@ -208,62 +199,8 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('=== Processing ContentData ===');
-    // Extract data from translation API response format if present
-    const unwrappedData: any = {};
-    let hasUnwrapped = false;
-    for (const sectionName in contentData) {
-      const sectionValue = contentData[sectionName];
-      console.log(`Checking section: ${sectionName}, type: ${typeof sectionValue}, has translatedData: ${sectionValue?.translatedData !== undefined}`);
-
-      // Check if this section has the translation API response format
-      if (sectionValue && typeof sectionValue === 'object' &&
-          sectionValue.translatedData && sectionValue.success !== undefined) {
-        console.log(`✓ Unwrapping translatedData for section: ${sectionName}`);
-        const translatedData = sectionValue.translatedData;
-        console.log(`  translatedData keys:`, Object.keys(translatedData).slice(0, 10));
-
-        // Check if translatedData has the section name as a key (double-wrapped)
-        if (translatedData[sectionName]) {
-          console.log(`  → Found double-wrapped structure, extracting ${sectionName}`);
-          unwrappedData[sectionName] = translatedData[sectionName];
-        }
-        // Check if translatedData is already the section content (not wrapped)
-        else {
-          console.log(`  → translatedData is unwrapped, wrapping as ${sectionName}`);
-          unwrappedData[sectionName] = translatedData;
-        }
-        hasUnwrapped = true;
-      } else {
-        unwrappedData[sectionName] = sectionValue;
-      }
-    }
-
-    const finalData = hasUnwrapped ? unwrappedData : contentData;
-    console.log('=== Final Data ===');
-    console.log('Has unwrapped:', hasUnwrapped);
-    console.log('Final data keys:', Object.keys(finalData).slice(0, 10));
-
-    // Log structure for key sections
-    if (finalData.news) {
-      console.log('news structure:', Object.keys(finalData.news).join(', '));
-      if (finalData.news.items) console.log('  news.items count:', finalData.news.items.length);
-    }
-    if (finalData.staff) {
-      console.log('staff structure:', Object.keys(finalData.staff).join(', '));
-      if (finalData.staff.members) console.log('  staff.members count:', finalData.staff.members.length);
-    }
-    if (finalData.pricing) {
-      console.log('pricing structure:', Object.keys(finalData.pricing).join(', '));
-      if (finalData.pricing.plans) console.log('  pricing.plans count:', finalData.pricing.plans.length);
-    }
-    if (finalData.reviews) {
-      console.log('reviews structure:', Object.keys(finalData.reviews).join(', '));
-      if (finalData.reviews.reviews) console.log('  reviews.reviews count:', finalData.reviews.reviews.length);
-    }
-
-    console.log('========================');
-    return finalData;
+    console.log('✓ Returning multilingual data as-is (object format with ja, en, zh-tw, ko)');
+    return contentData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
@@ -540,58 +477,20 @@ async function translateHeaderSection(
 
   console.log(`  Total navigation items to translate: ${navigation.length}`);
 
-  // Extract logo text from translatedData wrapper if present
-  let logoText = '';
-  if (headerContent.logo) {
-    if (headerContent.logo.translatedData?.text) {
-      logoText = headerContent.logo.translatedData.text;
-      console.log('  Extracted logo text from translatedData:', logoText);
-    } else if (headerContent.logo.text) {
-      logoText = headerContent.logo.text;
-      console.log('  Using direct logo text:', logoText);
-    }
-  }
-
-  if (!logoText) {
-    console.warn('  ⚠ Logo text is empty, skipping logo translation');
-  }
-
-  const translatedLogo = logoText
-    ? await translateItem(userId, 'header-logo', { text: logoText })
-    : { text: logoText };
+  const translatedLogo = headerContent.logo
+    ? await translateItem(userId, 'header-logo', { text: headerContent.logo.text })
+    : { text: headerContent.logo?.text || '' };
 
   const translatedNavigationItems: any[] = [];
 
   for (let i = 0; i < navigation.length; i++) {
-    // Extract label from translatedData wrapper if present
-    let navLabel = '';
-    const navItem = navigation[i];
-
-    if (navItem.translatedData?.label) {
-      navLabel = navItem.translatedData.label;
-    } else if (typeof navItem.label === 'object' && navItem.label.label) {
-      // Handle nested label structure
-      navLabel = navItem.label.label;
-    } else if (navItem.label) {
-      navLabel = navItem.label;
-    }
-
-    console.log(`\n  [${i + 1}/${navigation.length}] Translating nav item: "${navLabel}" (id: ${navItem.id})...`);
-
-    if (!navLabel) {
-      console.warn(`  ⚠ Nav item ${i} has empty label, skipping translation`);
-      translatedNavigationItems.push({
-        id: navItem.id,
-        label: navLabel
-      });
-      continue;
-    }
+    console.log(`\n  [${i + 1}/${navigation.length}] Translating nav item: "${navigation[i].label}" (id: ${navigation[i].id})...`);
 
     try {
-      const translatedNavItem = await translateItem(userId, `nav-${i}`, { label: navLabel });
+      const translatedNavItem = await translateItem(userId, `nav-${i}`, { label: navigation[i].label });
 
       const mergedNavItem = {
-        id: navItem.id,
+        id: navigation[i].id,
         ...translatedNavItem
       };
 
