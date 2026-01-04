@@ -809,6 +809,63 @@ async function translateAccessSection(userId: string, accessContent: any): Promi
   return mergedResult;
 }
 
+async function translateStoreInfoSection(userId: string, storeInfoContent: any): Promise<any> {
+  console.log('\n=== Translating storeInfo section with simplified item-by-item processing ===');
+
+  const items = storeInfoContent.items || [];
+  if (items.length === 0) {
+    console.log('  No items found, translating entire storeInfo section');
+    return translateSection(userId, 'storeInfo', storeInfoContent);
+  }
+
+  console.log(`  Total items to translate: ${items.length}`);
+
+  const baseFields = {
+    sectionTitle: storeInfoContent.sectionTitle,
+    mainImage: storeInfoContent.mainImage,
+    mainImageCaption: storeInfoContent.mainImageCaption
+  };
+
+  const translatedBaseFields = await translateItem(userId, 'storeInfo-base-fields', baseFields);
+
+  const translatedItems: any[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    console.log(`\n  [${i + 1}/${items.length}] Translating item: "${items[i].title}"...`);
+
+    try {
+      const translatedItem = await translateItem(userId, `storeInfo-item-${i}`, items[i]);
+
+      console.log(`  ✓ Translated item ${i}:`, JSON.stringify(translatedItem, null, 2).substring(0, 300));
+      translatedItems.push(translatedItem);
+
+      if (i < items.length - 1) {
+        console.log('  Waiting 3s before next item...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to translate storeInfo item ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  const mergedResult = {
+    storeInfo: {
+      ...translatedBaseFields,
+      items: translatedItems
+    }
+  };
+
+  console.log(`\n  ✓ StoreInfo section completed`);
+  console.log(`  Final merged items count: ${mergedResult.storeInfo.items.length}`);
+  if (mergedResult.storeInfo.items.length > 0) {
+    console.log(`  Final merged storeInfo sample:`, JSON.stringify(mergedResult.storeInfo, null, 2).substring(0, 600));
+  } else {
+    console.warn('  ⚠️ No items were merged!');
+  }
+  return mergedResult;
+}
+
 async function translateArraySectionOneByOne(
   userId: string,
   sectionName: string,
@@ -914,6 +971,11 @@ async function translateSectionInBatches(
   if (sectionName === 'access') {
     console.log(`${sectionName}: Using specialized access translation function`);
     return translateAccessSection(userId, sectionContent);
+  }
+
+  if (sectionName === 'storeInfo') {
+    console.log(`${sectionName}: Using specialized storeInfo translation function`);
+    return translateStoreInfoSection(userId, sectionContent);
   }
 
   let BATCH_SIZE = 4;
