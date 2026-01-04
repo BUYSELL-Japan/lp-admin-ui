@@ -275,11 +275,48 @@ export async function getSectionData(storeId: string): Promise<any | null> {
 
     console.log('✓ Multilingual data structure preserved');
     console.log('Sample hero data:', JSON.stringify(normalizedData.hero, null, 2).substring(0, 300));
-    return normalizedData;
+
+    console.log('Converting to editor format (extracting Japanese)...');
+    const editorFormatData: any = {};
+    for (const sectionKey in normalizedData) {
+      editorFormatData[sectionKey] = convertMultilingualToEditorFormat(normalizedData[sectionKey]);
+    }
+
+    console.log('✓ Converted to editor format');
+    console.log('Sample hero data (editor):', JSON.stringify(editorFormatData.hero, null, 2).substring(0, 300));
+    return editorFormatData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
   }
+}
+
+function convertMultilingualToEditorFormat(obj: any, depth: number = 0): any {
+  if (obj === null || obj === undefined || depth > 10) {
+    return obj;
+  }
+
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertMultilingualToEditorFormat(item, depth + 1));
+  }
+
+  const keys = Object.keys(obj);
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const hasOnlyLanguageKeys = keys.length > 0 && keys.every(key => languageKeys.includes(key));
+
+  if (hasOnlyLanguageKeys && obj.ja !== undefined) {
+    return obj.ja;
+  }
+
+  const result: any = {};
+  for (const key in obj) {
+    result[key] = convertMultilingualToEditorFormat(obj[key], depth + 1);
+  }
+  return result;
 }
 
 function convertLegacyFormatToMultilingual(obj: any): any {
