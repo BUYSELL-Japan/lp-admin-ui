@@ -59,10 +59,12 @@ export async function saveSiteData(userId: string, data: Partial<SiteData>): Pro
 
 export async function saveSection(userId: string, section: string, data: any): Promise<boolean> {
   try {
+    const normalizedData = normalizeDataStructure(data, section);
+
     const payload = {
       storeId: userId,
       section: section,
-      content: data,
+      content: normalizedData,
     };
 
     const response = await fetch(API_ENDPOINT, {
@@ -93,12 +95,23 @@ export async function saveSection(userId: string, section: string, data: any): P
 
 export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
   try {
-    console.log('=== Saving all sections ===');
+    console.log('=== Saving all sections (with normalization) ===');
+
+    const normalizedContent: any = {};
+
+    for (const sectionName in allSectionData) {
+      if (VALID_SECTIONS.includes(sectionName)) {
+        console.log(`Normalizing ${sectionName}...`);
+        normalizedContent[sectionName] = normalizeDataStructure(allSectionData[sectionName], sectionName);
+      } else {
+        normalizedContent[sectionName] = allSectionData[sectionName];
+      }
+    }
 
     const payload = {
       storeId: userId,
       section: 'all',
-      content: allSectionData,
+      content: normalizedContent,
     };
 
     const response = await fetch(API_ENDPOINT, {
@@ -237,7 +250,7 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('✓ Extracting Japanese only from multilingual data');
+    console.log('✓ Returning multilingual data structure');
 
     // 各セクションの構造を正規化: {translatedData: {sectionName: {...}}} -> {...}
     const normalizedData: any = {};
@@ -260,15 +273,232 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       }
     }
 
-    console.log('✓ Data normalized, extracting Japanese...');
-    const japaneseOnlyData = extractJapanese(normalizedData);
-    console.log('✓ Japanese data extracted successfully');
-    console.log('Sample hero data:', JSON.stringify(japaneseOnlyData.hero, null, 2).substring(0, 300));
-    return japaneseOnlyData;
+    console.log('✓ Multilingual data structure preserved');
+    console.log('Sample hero data:', JSON.stringify(normalizedData.hero, null, 2).substring(0, 300));
+    return normalizedData;
   } catch (error) {
     console.error('Error fetching section data:', error);
     return null;
   }
+}
+
+function convertLegacyFormatToMultilingual(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertLegacyFormatToMultilingual(item));
+  }
+
+  const result: any = {};
+  const processedFields = new Set<string>();
+
+  for (const key in obj) {
+    if (processedFields.has(key)) {
+      continue;
+    }
+
+    if (key.endsWith('_ja') || key.endsWith('_en') || key.endsWith('_ko') || key.endsWith('_zh') || key.endsWith('_zh-tw')) {
+      const baseFieldName = key.replace(/_(?:ja|en|ko|zh-tw|zh)$/, '');
+
+      if (!processedFields.has(baseFieldName)) {
+        const multilingualField: any = {};
+
+        if (obj[`${baseFieldName}_ja`] !== undefined) {
+          multilingualField.ja = obj[`${baseFieldName}_ja`];
+          processedFields.add(`${baseFieldName}_ja`);
+        }
+        if (obj[`${baseFieldName}_en`] !== undefined) {
+          multilingualField.en = obj[`${baseFieldName}_en`];
+          processedFields.add(`${baseFieldName}_en`);
+        }
+        if (obj[`${baseFieldName}_ko`] !== undefined) {
+          multilingualField.ko = obj[`${baseFieldName}_ko`];
+          processedFields.add(`${baseFieldName}_ko`);
+        }
+        if (obj[`${baseFieldName}_zh-tw`] !== undefined) {
+          multilingualField['zh-tw'] = obj[`${baseFieldName}_zh-tw`];
+          processedFields.add(`${baseFieldName}_zh-tw`);
+        }
+        if (obj[`${baseFieldName}_zh`] !== undefined) {
+          multilingualField['zh-tw'] = obj[`${baseFieldName}_zh`];
+          processedFields.add(`${baseFieldName}_zh`);
+        }
+
+        if (Object.keys(multilingualField).length > 0) {
+          result[baseFieldName] = multilingualField;
+          processedFields.add(baseFieldName);
+        }
+      }
+    } else {
+      processedFields.add(key);
+      result[key] = convertLegacyFormatToMultilingual(obj[key]);
+    }
+  }
+
+  return result;
+}
+
+function convertCategoriesToMultilingual(categories: any[]): any[] {
+  if (!Array.isArray(categories)) {
+    return categories;
+  }
+
+  return categories.map(cat => {
+    if (typeof cat === 'string') {
+      return { ja: cat, en: cat, ko: cat, 'zh-tw': cat };
+    }
+    return convertLegacyFormatToMultilingual(cat);
+  });
+}
+
+function convertStringFieldsToMultilingual(obj: any, depth: number = 0): any {
+  if (obj === null || obj === undefined || depth > 10) {
+    return obj;
+  }
+
+  if (typeof obj === 'string') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertStringFieldsToMultilingual(item, depth + 1));
+  }
+
+  if (typeof obj === 'object') {
+    const keys = Object.keys(obj);
+    const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+    const hasMultipleLanguages = languageKeys.filter(lang => keys.includes(lang)).length >= 2;
+
+    if (hasMultipleLanguages) {
+      return obj;
+    }
+
+    const result: any = {};
+    for (const key in obj) {
+      const value = obj[key];
+
+      if (key === 'icon' || key === 'image' || key === 'url' || key === 'avatar' || key === 'backgroundImage' ||
+          key === 'mainImage' || key === 'mapEmbedUrl' || key === 'link' || key === 'rating' || key === 'date' ||
+          key === 'year' || key === 'price' || key === 'isPopular' || key === 'id' || key === 'type' || key === 'platform') {
+        result[key] = value;
+      } else if (typeof value === 'string') {
+        result[key] = { ja: value, en: value, ko: value, 'zh-tw': value };
+      } else {
+        result[key] = convertStringFieldsToMultilingual(value, depth + 1);
+      }
+    }
+    return result;
+  }
+
+  return obj;
+}
+
+function normalizeDataStructure(data: any, sectionName: string): any {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  let normalized = convertLegacyFormatToMultilingual(data);
+
+  const hasMultilingualData = JSON.stringify(normalized).includes('"ja":') || JSON.stringify(normalized).includes('"en":');
+
+  if (!hasMultilingualData) {
+    console.log(`No multilingual data detected in ${sectionName}, converting string fields...`);
+    normalized = convertStringFieldsToMultilingual(normalized);
+  }
+
+  if (sectionName === 'menu' && normalized.categories && Array.isArray(normalized.categories)) {
+    const flatItems: any[] = [];
+
+    for (const category of normalized.categories) {
+      const categoryName = category.name || category.name_ja || category;
+      const items = category.items || [];
+
+      for (const item of items) {
+        flatItems.push({
+          ...item,
+          category: typeof categoryName === 'object' ? categoryName : { ja: categoryName, en: categoryName, ko: categoryName, 'zh-tw': categoryName }
+        });
+      }
+    }
+
+    delete normalized.categories;
+    normalized.items = flatItems;
+  }
+
+  if (sectionName === 'gallery') {
+    if (normalized.categories && Array.isArray(normalized.categories)) {
+      normalized.categories = normalized.categories.map((cat: any) => {
+        if (typeof cat === 'string') {
+          return { ja: cat, en: cat, ko: cat, 'zh-tw': cat };
+        }
+        return cat;
+      });
+    }
+
+    if (normalized.images && Array.isArray(normalized.images)) {
+      normalized.images = normalized.images.map((img: any) => {
+        if (img.caption && typeof img.caption === 'string') {
+          img.caption = { ja: img.caption, en: img.caption, ko: img.caption, 'zh-tw': img.caption };
+        }
+        if (img.alt && typeof img.alt === 'string') {
+          img.alt = { ja: img.alt, en: img.alt, ko: img.alt, 'zh-tw': img.alt };
+        }
+        if (img.category && typeof img.category === 'string') {
+          img.category = { ja: img.category, en: img.category, ko: img.category, 'zh-tw': img.category };
+        }
+        return img;
+      });
+    }
+  }
+
+  if (normalized.title && !normalized.sectionTitle) {
+    normalized.sectionTitle = normalized.title;
+    delete normalized.title;
+  }
+  if (normalized.subtitle && !normalized.sectionSubtitle) {
+    normalized.sectionSubtitle = normalized.subtitle;
+    delete normalized.subtitle;
+  }
+
+  if (sectionName === 'pricing' && normalized.plans && Array.isArray(normalized.plans)) {
+    normalized.plans = normalized.plans.map((plan: any) => {
+      const convertedPlan = { ...plan };
+
+      if (convertedPlan.features && Array.isArray(convertedPlan.features)) {
+        convertedPlan.features = convertedPlan.features.map((feature: any) => {
+          if (typeof feature === 'string') {
+            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature };
+          }
+          if (feature.text_ja || feature.text_en) {
+            return {
+              ja: feature.text_ja || feature.ja || '',
+              en: feature.text_en || feature.en || '',
+              ko: feature.text_ko || feature.ko || '',
+              'zh-tw': feature['text_zh-tw'] || feature['zh-tw'] || ''
+            };
+          }
+          if (feature.ja || feature.en) {
+            return feature;
+          }
+          if (typeof feature === 'object') {
+            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature };
+          }
+          return feature;
+        });
+      }
+
+      return convertedPlan;
+    });
+  }
+
+  return normalized;
 }
 
 async function translateItem(
@@ -1266,6 +1496,13 @@ export async function translateAndSave(
     }
     console.log('========================================\n');
 
+    console.log('Applying final normalization before save...');
+    for (const sectionName in savePayload.content) {
+      if (VALID_SECTIONS.includes(sectionName)) {
+        savePayload.content[sectionName] = normalizeDataStructure(savePayload.content[sectionName], sectionName);
+      }
+    }
+
     const payloadString = JSON.stringify(savePayload);
     console.log(`Payload size: ${payloadString.length} characters`);
 
@@ -1291,6 +1528,51 @@ export async function translateAndSave(
   } catch (error) {
     console.error('Error in translate and save:', error);
     alert('翻訳または保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    return false;
+  }
+}
+
+export async function saveAllSectionsNormalized(userId: string, allSectionData: any): Promise<boolean> {
+  try {
+    console.log('=== Normalizing and saving all sections ===');
+
+    const normalizedContent: any = {};
+
+    for (const sectionName in allSectionData) {
+      if (VALID_SECTIONS.includes(sectionName)) {
+        console.log(`Normalizing ${sectionName}...`);
+        normalizedContent[sectionName] = normalizeDataStructure(allSectionData[sectionName], sectionName);
+      }
+    }
+
+    const payload = {
+      storeId: userId,
+      section: 'all',
+      content: normalizedContent,
+    };
+
+    console.log('Normalized sections:', Object.keys(normalizedContent).join(', '));
+
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error('Failed to save normalized sections');
+    }
+
+    const result = await response.json();
+    console.log('Save normalized sections successful:', result);
+    return true;
+  } catch (error) {
+    console.error('Error saving normalized sections:', error);
+    alert('データの保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
     return false;
   }
 }
