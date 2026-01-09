@@ -257,18 +257,31 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     for (const sectionKey in contentData) {
       const section = contentData[sectionKey];
 
+      console.log(`Normalizing section: ${sectionKey}`);
+      console.log(`  Raw section type:`, typeof section);
+      console.log(`  Has translatedData:`, section && typeof section === 'object' && 'translatedData' in section);
+
       // translatedDataラッパーがある場合
-      if (section && section.translatedData && typeof section.translatedData === 'object') {
+      if (section && typeof section === 'object' && section.translatedData && typeof section.translatedData === 'object') {
+        console.log(`  translatedData keys:`, Object.keys(section.translatedData));
+
         // translatedData内にセクション名のキーがある場合（{translatedData: {hero: {...}}}）
         if (section.translatedData[sectionKey]) {
+          console.log(`  ✓ Using translatedData[${sectionKey}]`);
           normalizedData[sectionKey] = section.translatedData[sectionKey];
         }
         // translatedData内に直接データがある場合（{translatedData: {title: {...}, subtitle: {...}}}）
         else {
+          console.log(`  ✓ Using translatedData directly`);
           normalizedData[sectionKey] = section.translatedData;
         }
-      } else {
+      } else if (section && typeof section === 'object') {
         // translatedDataラッパーがない場合はそのまま
+        console.log(`  ✓ No translatedData wrapper, using section directly`);
+        console.log(`  Section keys:`, Object.keys(section).slice(0, 10).join(', '));
+        normalizedData[sectionKey] = section;
+      } else {
+        console.log(`  ⚠ Invalid section data type:`, typeof section);
         normalizedData[sectionKey] = section;
       }
     }

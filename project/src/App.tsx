@@ -152,15 +152,31 @@ function App() {
             const merged = { ...prev };
 
             Object.keys(savedData).forEach(key => {
-              merged[key] = {
-                ...prev[key],
-                ...savedData[key],
-              };
+              if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
+                console.log(`  Merging section: ${key}`);
+                console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
+                console.log(`    Default keys:`, prev[key] ? Object.keys(prev[key]).join(', ') : 'none');
+                merged[key] = {
+                  ...prev[key],
+                  ...savedData[key],
+                };
+                console.log(`    Merged keys:`, Object.keys(merged[key]).join(', '));
+              } else {
+                console.log(`  Skipping empty or invalid section: ${key}`);
+              }
             });
 
             console.log('Merged data keys:', Object.keys(merged));
-            console.log('Merged hero sample:', merged.hero);
+            console.log('Merged hero sample:', JSON.stringify(merged.hero, null, 2).substring(0, 300));
+            console.log('Merged storeInfo sample:', JSON.stringify(merged.storeInfo, null, 2).substring(0, 300));
+            console.log('Merged company sample:', JSON.stringify(merged.company, null, 2).substring(0, 300));
             console.log('=== After Deep Merge ===');
+            console.log('hero exists:', merged.hero ? 'Yes' : 'No');
+            console.log('hero.title:', merged.hero?.title || 'Missing');
+            console.log('storeInfo exists:', merged.storeInfo ? 'Yes' : 'No');
+            console.log('storeInfo.items:', merged.storeInfo?.items?.length || 'Missing');
+            console.log('company exists:', merged.company ? 'Yes' : 'No');
+            console.log('company.philosophy:', merged.company?.philosophy ? 'Yes' : 'No');
             console.log('pricing plans exists:', merged.pricing?.plans ? 'Yes' : 'No');
             console.log('staff members exists:', merged.staff?.members ? 'Yes' : 'No');
             console.log('reviews reviews exists:', merged.reviews?.reviews ? 'Yes' : 'No');

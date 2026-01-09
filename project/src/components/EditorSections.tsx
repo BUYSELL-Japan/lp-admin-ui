@@ -108,10 +108,21 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
 export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
   const heroData = data as HeroData;
 
-  if (!heroData) {
+  console.log('=== HeroEditor Debug ===');
+  console.log('heroData:', heroData);
+  console.log('heroData type:', typeof heroData);
+  console.log('heroData keys:', heroData ? Object.keys(heroData) : 'null');
+  console.log('heroData.title:', heroData?.title);
+  console.log('heroData.subtitle:', heroData?.subtitle);
+  console.log('========================');
+
+  if (!heroData || !heroData.title) {
     return (
       <div className="text-center text-gray-500 py-8">
         ヒーローデータが読み込まれていません
+        <div className="text-xs mt-2">
+          デバッグ: {heroData ? `Keys: ${Object.keys(heroData).join(', ')}` : 'データがnull'}
+        </div>
       </div>
     );
   }
@@ -575,10 +586,21 @@ export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
 export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
   const storeData = data as StoreInfoData;
 
+  console.log('=== StoreInfoEditor Debug ===');
+  console.log('storeData:', storeData);
+  console.log('storeData type:', typeof storeData);
+  console.log('storeData keys:', storeData ? Object.keys(storeData) : 'null');
+  console.log('storeData.items:', storeData?.items);
+  console.log('storeData.sectionTitle:', storeData?.sectionTitle);
+  console.log('=============================');
+
   if (!storeData || !storeData.items) {
     return (
       <div className="text-center text-gray-500 py-8">
         店舗情報データが読み込まれていません
+        <div className="text-xs mt-2">
+          デバッグ: {storeData ? `Keys: ${Object.keys(storeData).join(', ')}` : 'データがnull'}
+        </div>
       </div>
     );
   }
@@ -1000,10 +1022,29 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
 export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
   const companyData = data as CompanyData;
 
+  console.log('=== CompanyEditor Debug ===');
+  console.log('companyData:', companyData);
+  console.log('companyData type:', typeof companyData);
+  console.log('companyData keys:', companyData ? Object.keys(companyData) : 'null');
+  console.log('companyData.philosophy:', companyData?.philosophy);
+  console.log('companyData.history:', companyData?.history);
+  console.log('companyData.companyInfo:', companyData?.companyInfo);
+  console.log('===========================');
+
   if (!companyData || !companyData.philosophy || !companyData.history || !companyData.history.timeline || !companyData.companyInfo || !companyData.companyInfo.items) {
     return (
       <div className="text-center text-gray-500 py-8">
         事業所概要データが読み込まれていません
+        <div className="text-xs mt-2">
+          デバッグ: {companyData ? `Keys: ${Object.keys(companyData).join(', ')}` : 'データがnull'}
+          {companyData && (
+            <>
+              <br />philosophy: {companyData.philosophy ? 'あり' : 'なし'}
+              <br />history: {companyData.history ? 'あり' : 'なし'}
+              <br />companyInfo: {companyData.companyInfo ? 'あり' : 'なし'}
+            </>
+          )}
+        </div>
       </div>
     );
   }
