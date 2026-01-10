@@ -449,6 +449,36 @@ function convertStringFieldsToMultilingual(obj: any, depth: number = 0): any {
   return obj;
 }
 
+function hasMultilingualFormat(obj: any, depth: number = 0, maxDepth: number = 5): boolean {
+  if (depth > maxDepth || !obj || typeof obj !== 'object') {
+    return false;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.some(item => hasMultilingualFormat(item, depth + 1, maxDepth));
+  }
+
+  const keys = Object.keys(obj);
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+
+  // 多言語オブジェクトかチェック
+  const langKeysInObj = keys.filter(k => languageKeys.includes(k));
+  if (langKeysInObj.length >= 2) {
+    return true;
+  }
+
+  // 子オブジェクトを再帰的にチェック
+  for (const key of keys) {
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      if (hasMultilingualFormat(obj[key], depth + 1, maxDepth)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function normalizeDataStructure(data: any, sectionName: string): any {
   if (!data || typeof data !== 'object') {
     return data;
@@ -456,11 +486,14 @@ function normalizeDataStructure(data: any, sectionName: string): any {
 
   let normalized = convertLegacyFormatToMultilingual(data);
 
-  const hasMultilingualData = JSON.stringify(normalized).includes('"ja":') || JSON.stringify(normalized).includes('"en":');
+  const hasMultilingualData = hasMultilingualFormat(normalized);
+  console.log(`${sectionName}: Multilingual data detected: ${hasMultilingualData}`);
 
   if (!hasMultilingualData) {
     console.log(`No multilingual data detected in ${sectionName}, converting string fields...`);
     normalized = convertStringFieldsToMultilingual(normalized);
+  } else {
+    console.log(`${sectionName}: Skipping string conversion, data already multilingual`);
   }
 
   if (sectionName === 'menu' && normalized.categories && Array.isArray(normalized.categories)) {
@@ -619,6 +652,19 @@ async function translateItem(
       throw new Error(`Invalid response structure for item: ${itemId}`);
     }
 
+    // 翻訳結果の検証：多言語フィールドが存在するか確認
+    const sampleField = Object.keys(extractedContent)[0];
+    if (sampleField && extractedContent[sampleField] && typeof extractedContent[sampleField] === 'object') {
+      const fieldKeys = Object.keys(extractedContent[sampleField]);
+      const hasMultilingual = fieldKeys.includes('ja') || fieldKeys.includes('en');
+      console.log(`  Multilingual check for ${itemId}: ${hasMultilingual ? 'PASS' : 'FAIL'}`);
+      if (hasMultilingual) {
+        console.log(`    Sample: ${sampleField} has languages: ${fieldKeys.join(', ')}`);
+      } else {
+        console.warn(`    ⚠ No multilingual data detected in ${itemId}. Sample field: ${sampleField}`);
+      }
+    }
+
     console.log(`  ✓ Successfully extracted content for ${itemId}`);
     return extractedContent;
   } catch (error) {
@@ -699,6 +745,21 @@ async function translateSection(
 
     if (extractedContent && extractedContent[sectionName]) {
       console.log(`  ✓ Response has correct structure: { ${sectionName}: {...} }`);
+
+      // 翻訳結果の検証：多言語フィールドが存在するか確認
+      const sectionContent = extractedContent[sectionName];
+      const sampleField = Object.keys(sectionContent).find(key => typeof sectionContent[key] === 'object' && sectionContent[key] !== null);
+      if (sampleField && sectionContent[sampleField]) {
+        const fieldKeys = Object.keys(sectionContent[sampleField]);
+        const hasMultilingual = fieldKeys.includes('ja') || fieldKeys.includes('en');
+        console.log(`  Multilingual check for ${sectionName}: ${hasMultilingual ? 'PASS' : 'FAIL'}`);
+        if (hasMultilingual) {
+          console.log(`    Sample: ${sampleField} has languages: ${fieldKeys.join(', ')}`);
+        } else {
+          console.warn(`    ⚠ No multilingual data detected in ${sectionName}. Sample field: ${sampleField}, keys: ${fieldKeys.join(', ')}`);
+        }
+      }
+
       return extractedContent;
     } else if (extractedContent) {
       console.warn(`  ⚠ Response missing section wrapper, wrapping as { ${sectionName}: {...} }`);
@@ -1546,12 +1607,23 @@ export async function translateAndSave(
     }
     console.log('========================================\n');
 
-    console.log('Applying final normalization before save...');
-    for (const sectionName in savePayload.content) {
-      if (VALID_SECTIONS.includes(sectionName)) {
-        savePayload.content[sectionName] = normalizeDataStructure(savePayload.content[sectionName], sectionName);
+    // 翻訳後のデータは既に多言語形式なので、正規化処理は不要
+    console.log('Skipping normalization for translated data (already in multilingual format)');
+
+    // 最終的な保存データの多言語検証
+    console.log('\n=== Final Save Data Multilingual Validation ===');
+    for (const sectionName of Object.keys(mergedContent)) {
+      const isMultilingual = hasMultilingualFormat(mergedContent[sectionName]);
+      console.log(`${sectionName}: ${isMultilingual ? '✓ Multilingual' : '✗ NOT Multilingual'}`);
+
+      if (!isMultilingual) {
+        console.warn(`⚠️ WARNING: ${sectionName} does not have multilingual format!`);
+        // サンプルデータを表示
+        const sample = JSON.stringify(mergedContent[sectionName], null, 2).substring(0, 500);
+        console.warn(`Sample data: ${sample}`);
       }
     }
+    console.log('===============================================\n');
 
     const payloadString = JSON.stringify(savePayload);
     console.log(`Payload size: ${payloadString.length} characters`);
