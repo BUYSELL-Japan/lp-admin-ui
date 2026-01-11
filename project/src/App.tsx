@@ -156,10 +156,45 @@ function App() {
                 console.log(`  Merging section: ${key}`);
                 console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
                 console.log(`    Default keys:`, prev[key] ? Object.keys(prev[key]).join(', ') : 'none');
-                merged[key] = {
-                  ...prev[key],
-                  ...savedData[key],
-                };
+
+                if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
+                  const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
+                  const titles = ['所在地', '営業時間', '電話番号', 'メール'];
+
+                  const convertedItems = savedData[key].items.map((item: any, index: number) => {
+                    let content = '';
+                    if (typeof item === 'string') {
+                      content = item;
+                    } else if (typeof item === 'object') {
+                      if (item.ja) {
+                        content = item.ja;
+                      } else if (item.content) {
+                        content = typeof item.content === 'string' ? item.content : item.content.ja || '';
+                      } else {
+                        const values = Object.values(item);
+                        content = values.length > 0 ? String(values[0]) : '';
+                      }
+                    }
+
+                    return {
+                      icon: item.icon || icons[index] || 'MapPin',
+                      title: item.title || titles[index] || '',
+                      content: content
+                    };
+                  });
+
+                  merged[key] = {
+                    ...prev[key],
+                    ...savedData[key],
+                    items: convertedItems
+                  };
+                  console.log(`    Converted storeInfo items:`, convertedItems);
+                } else {
+                  merged[key] = {
+                    ...prev[key],
+                    ...savedData[key],
+                  };
+                }
                 console.log(`    Merged keys:`, Object.keys(merged[key]).join(', '));
               } else {
                 console.log(`  Skipping empty or invalid section: ${key}`);
