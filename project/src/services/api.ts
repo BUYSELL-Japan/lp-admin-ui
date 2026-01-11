@@ -837,6 +837,17 @@ async function translateCompanySection(
 
   const parts: Array<{ name: string; content: any }> = [];
 
+  if (companyContent.sectionTitle || companyContent.sectionSubtitle) {
+    parts.push({
+      name: 'company.sectionFields',
+      content: {
+        sectionTitle: companyContent.sectionTitle,
+        sectionSubtitle: companyContent.sectionSubtitle
+      }
+    });
+    console.log('  ✓ Added section title/subtitle part');
+  }
+
   if (companyContent.philosophy) {
     parts.push({ name: 'company.philosophy', content: { philosophy: companyContent.philosophy } });
     console.log('  ✓ Added philosophy part');
