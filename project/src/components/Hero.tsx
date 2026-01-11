@@ -19,7 +19,7 @@ export default function Hero({ data }: HeroProps) {
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
-  const title = getText(data?.title, currentLang);
+  const title = getText(data?.sectionTitle, currentLang);
   const subtitle = getText(data?.subtitle, currentLang);
   const backgroundImage = typeof data?.backgroundImage === 'string'
     ? data.backgroundImage
