@@ -120,8 +120,8 @@ export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700">タイトル</label>
         <textarea
-          value={heroData.title || ''}
-          onChange={(e) => onUpdate({ title: e.target.value })}
+          value={heroData.sectionTitle || ''}
+          onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           rows={3}
         />

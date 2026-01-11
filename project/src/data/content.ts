@@ -39,7 +39,7 @@ export const headerData: HeaderData = {
 };
 
 export const heroData: HeroData = {
-  title: '[サンプル] 琉球の魂を\n一杯に込めて',
+  sectionTitle: '[サンプル] 琉球の魂を\n一杯に込めて',
   subtitle: '[サンプル] 伝統の味わい、自家製麺へのこだわり',
   backgroundImage: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=1920&q=90',
 };
