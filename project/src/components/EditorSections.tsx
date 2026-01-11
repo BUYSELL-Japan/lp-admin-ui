@@ -625,6 +625,19 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
     );
   }
 
+  const getItemValue = (item: any, field: 'title' | 'content') => {
+    if (typeof item[field] === 'string') {
+      return item[field];
+    }
+    if (typeof item[field] === 'object' && item[field]?.ja) {
+      return item[field].ja;
+    }
+    if (typeof item.ja === 'string' && field === 'content') {
+      return item.ja;
+    }
+    return '';
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -639,10 +652,27 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
       {storeData.items.map((item, index) => (
         <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3">
           <div>
+            <label className="block text-sm font-medium text-gray-700">アイコン</label>
+            <select
+              value={item.icon || 'MapPin'}
+              onChange={(e) => {
+                const newItems = [...storeData.items];
+                newItems[index] = { ...item, icon: e.target.value };
+                onUpdate({ items: newItems });
+              }}
+              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+            >
+              <option value="MapPin">所在地</option>
+              <option value="Clock">営業時間</option>
+              <option value="Phone">電話</option>
+              <option value="Mail">メール</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">タイトル</label>
             <input
               type="text"
-              value={item.title}
+              value={getItemValue(item, 'title')}
               onChange={(e) => {
                 const newItems = [...storeData.items];
                 newItems[index] = { ...item, title: e.target.value };
@@ -652,10 +682,10 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">内容</label>
+            <label className="block text-sm font-medium text-gray-700">内容（日本語）</label>
             <input
               type="text"
-              value={item.content}
+              value={getItemValue(item, 'content')}
               onChange={(e) => {
                 const newItems = [...storeData.items];
                 newItems[index] = { ...item, content: e.target.value };
