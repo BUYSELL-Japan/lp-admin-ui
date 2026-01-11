@@ -638,7 +638,19 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
       </div>
       {storeData.items.map((item, index) => (
         <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3">
-          <h4 className="font-medium">{item.title}</h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">タイトル</label>
+            <input
+              type="text"
+              value={item.title}
+              onChange={(e) => {
+                const newItems = [...storeData.items];
+                newItems[index] = { ...item, title: e.target.value };
+                onUpdate({ items: newItems });
+              }}
+              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">内容</label>
             <input
