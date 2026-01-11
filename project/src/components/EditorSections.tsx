@@ -38,7 +38,6 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
     { id: 'about', defaultLabel: 'こだわり' },
     { id: 'menu', defaultLabel: 'お品書き' },
     { id: 'pricing', defaultLabel: 'コース・プラン' },
-    { id: 'cta', defaultLabel: '予約・お問い合わせ' },
     { id: 'gallery', defaultLabel: 'ギャラリー' },
     { id: 'staff', defaultLabel: 'スタッフ' },
     { id: 'reviews', defaultLabel: 'お客様の声' },
@@ -108,21 +107,10 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
 export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
   const heroData = data as HeroData;
 
-  console.log('=== HeroEditor Debug ===');
-  console.log('heroData:', heroData);
-  console.log('heroData type:', typeof heroData);
-  console.log('heroData keys:', heroData ? Object.keys(heroData) : 'null');
-  console.log('heroData.title:', heroData?.title);
-  console.log('heroData.subtitle:', heroData?.subtitle);
-  console.log('========================');
-
-  if (!heroData || !heroData.title) {
+  if (!heroData) {
     return (
       <div className="text-center text-gray-500 py-8">
         ヒーローデータが読み込まれていません
-        <div className="text-xs mt-2">
-          デバッグ: {heroData ? `Keys: ${Object.keys(heroData).join(', ')}` : 'データがnull'}
-        </div>
       </div>
     );
   }
@@ -233,6 +221,30 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
     );
   }
 
+  const MAX_MENU_ITEMS = 18;
+
+  const addMenuItem = () => {
+    if (menuData.items.length >= MAX_MENU_ITEMS) {
+      alert(`メニューは最大${MAX_MENU_ITEMS}品までです`);
+      return;
+    }
+
+    const newItem = {
+      name: '新しいメニュー',
+      description: '説明を入力してください',
+      price: '¥0',
+      image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+    };
+
+    const newItems = [...menuData.items, newItem];
+    onUpdate({ items: newItems });
+  };
+
+  const removeMenuItem = (index: number) => {
+    const newItems = menuData.items.filter((_, i) => i !== index);
+    onUpdate({ items: newItems });
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -253,10 +265,30 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-gray-600">
+          メニュー品数: {menuData.items.length} / {MAX_MENU_ITEMS}
+        </p>
+        <button
+          onClick={addMenuItem}
+          disabled={menuData.items.length >= MAX_MENU_ITEMS}
+          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+        >
+          メニューを追加
+        </button>
+      </div>
       <div className="space-y-3 max-h-[500px] overflow-y-auto">
-        {menuData.items.slice(0, 5).map((item, index) => (
-          <div key={index} className="p-3 border border-gray-200 rounded-lg space-y-2">
-            <h4 className="font-medium text-sm">メニュー {index + 1}</h4>
+        {menuData.items.map((item, index) => (
+          <div key={index} className="p-3 border border-gray-200 rounded-lg space-y-2 relative">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-sm">メニュー {index + 1}</h4>
+              <button
+                onClick={() => removeMenuItem(index)}
+                className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                削除
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-medium text-gray-700">名前</label>
@@ -309,7 +341,6 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
             />
           </div>
         ))}
-        <p className="text-xs text-gray-500">最初の5件のみ表示しています</p>
       </div>
     </div>
   );
@@ -586,21 +617,10 @@ export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
 export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
   const storeData = data as StoreInfoData;
 
-  console.log('=== StoreInfoEditor Debug ===');
-  console.log('storeData:', storeData);
-  console.log('storeData type:', typeof storeData);
-  console.log('storeData keys:', storeData ? Object.keys(storeData) : 'null');
-  console.log('storeData.items:', storeData?.items);
-  console.log('storeData.sectionTitle:', storeData?.sectionTitle);
-  console.log('=============================');
-
   if (!storeData || !storeData.items) {
     return (
       <div className="text-center text-gray-500 py-8">
         店舗情報データが読み込まれていません
-        <div className="text-xs mt-2">
-          デバッグ: {storeData ? `Keys: ${Object.keys(storeData).join(', ')}` : 'データがnull'}
-        </div>
       </div>
     );
   }
@@ -1022,29 +1042,10 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
 export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
   const companyData = data as CompanyData;
 
-  console.log('=== CompanyEditor Debug ===');
-  console.log('companyData:', companyData);
-  console.log('companyData type:', typeof companyData);
-  console.log('companyData keys:', companyData ? Object.keys(companyData) : 'null');
-  console.log('companyData.philosophy:', companyData?.philosophy);
-  console.log('companyData.history:', companyData?.history);
-  console.log('companyData.companyInfo:', companyData?.companyInfo);
-  console.log('===========================');
-
   if (!companyData || !companyData.philosophy || !companyData.history || !companyData.history.timeline || !companyData.companyInfo || !companyData.companyInfo.items) {
     return (
       <div className="text-center text-gray-500 py-8">
         事業所概要データが読み込まれていません
-        <div className="text-xs mt-2">
-          デバッグ: {companyData ? `Keys: ${Object.keys(companyData).join(', ')}` : 'データがnull'}
-          {companyData && (
-            <>
-              <br />philosophy: {companyData.philosophy ? 'あり' : 'なし'}
-              <br />history: {companyData.history ? 'あり' : 'なし'}
-              <br />companyInfo: {companyData.companyInfo ? 'あり' : 'なし'}
-            </>
-          )}
-        </div>
       </div>
     );
   }

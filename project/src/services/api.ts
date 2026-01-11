@@ -229,11 +229,9 @@ export async function getSectionData(storeId: string): Promise<any | null> {
 
     let contentData = null;
 
-    // DynamoDB returns data in ContentData field
     if (result.ContentData) {
       console.log('✓ Returning ContentData from DynamoDB');
       contentData = result.ContentData;
-      // Remove Status field as it's not part of section data
       if (contentData.Status) {
         delete contentData.Status;
       }
@@ -250,53 +248,77 @@ export async function getSectionData(storeId: string): Promise<any | null> {
       return null;
     }
 
-    console.log('✓ Returning multilingual data structure');
+    console.log('✓ Processing multilingual data structure');
+    console.log('ContentData sections:', Object.keys(contentData).join(', '));
 
-    // 各セクションの構造を正規化: {translatedData: {sectionName: {...}}} -> {...}
     const normalizedData: any = {};
     for (const sectionKey in contentData) {
       const section = contentData[sectionKey];
 
-      console.log(`Normalizing section: ${sectionKey}`);
-      console.log(`  Raw section type:`, typeof section);
-      console.log(`  Has translatedData:`, section && typeof section === 'object' && 'translatedData' in section);
+      console.log(`\n=== Processing section: ${sectionKey} ===`);
+      console.log(`  Type:`, typeof section);
+      console.log(`  Is Object:`, section && typeof section === 'object');
+      console.log(`  Keys:`, section && typeof section === 'object' ? Object.keys(section).slice(0, 5).join(', ') : 'N/A');
 
-      // translatedDataラッパーがある場合
-      if (section && typeof section === 'object' && section.translatedData && typeof section.translatedData === 'object') {
-        console.log(`  translatedData keys:`, Object.keys(section.translatedData));
+      if (!section || typeof section !== 'object') {
+        console.log(`  ⚠ Skipping invalid section`);
+        continue;
+      }
 
-        // translatedData内にセクション名のキーがある場合（{translatedData: {hero: {...}}}）
+      let extractedData = null;
+
+      if (section.translatedData && typeof section.translatedData === 'object') {
+        console.log(`  Has translatedData wrapper`);
+        const translatedKeys = Object.keys(section.translatedData);
+        console.log(`  translatedData keys:`, translatedKeys.join(', '));
+
         if (section.translatedData[sectionKey]) {
-          console.log(`  ✓ Using translatedData[${sectionKey}]`);
-          normalizedData[sectionKey] = section.translatedData[sectionKey];
-        }
-        // translatedData内に直接データがある場合（{translatedData: {title: {...}, subtitle: {...}}}）
-        else {
+          console.log(`  ✓ Found nested section key: ${sectionKey}`);
+          extractedData = section.translatedData[sectionKey];
+        } else {
           console.log(`  ✓ Using translatedData directly`);
-          normalizedData[sectionKey] = section.translatedData;
+          extractedData = section.translatedData;
         }
-      } else if (section && typeof section === 'object') {
-        // translatedDataラッパーがない場合はそのまま
-        console.log(`  ✓ No translatedData wrapper, using section directly`);
-        console.log(`  Section keys:`, Object.keys(section).slice(0, 10).join(', '));
-        normalizedData[sectionKey] = section;
       } else {
-        console.log(`  ⚠ Invalid section data type:`, typeof section);
-        normalizedData[sectionKey] = section;
+        console.log(`  ✓ No wrapper, using section directly`);
+        extractedData = section;
+      }
+
+      if (extractedData && typeof extractedData === 'object') {
+        const dataKeys = Object.keys(extractedData);
+        console.log(`  Extracted data keys:`, dataKeys.slice(0, 10).join(', '));
+        console.log(`  Sample field:`, dataKeys[0], '=', JSON.stringify(extractedData[dataKeys[0]]).substring(0, 100));
+        normalizedData[sectionKey] = extractedData;
+      } else {
+        console.log(`  ⚠ No valid data extracted`);
       }
     }
 
-    console.log('✓ Multilingual data structure preserved');
-    console.log('Sample hero data:', JSON.stringify(normalizedData.hero, null, 2).substring(0, 300));
-
-    console.log('Converting to editor format (extracting Japanese)...');
-    const editorFormatData: any = {};
-    for (const sectionKey in normalizedData) {
-      editorFormatData[sectionKey] = convertMultilingualToEditorFormat(normalizedData[sectionKey]);
+    console.log('\n=== Conversion Summary ===');
+    console.log('Normalized sections:', Object.keys(normalizedData).join(', '));
+    if (normalizedData.hero) {
+      console.log('Hero data sample:', JSON.stringify(normalizedData.hero, null, 2).substring(0, 300));
     }
 
-    console.log('✓ Converted to editor format');
-    console.log('Sample hero data (editor):', JSON.stringify(editorFormatData.hero, null, 2).substring(0, 300));
+    console.log('\n=== Converting to Editor Format ===');
+    const editorFormatData: any = {};
+    for (const sectionKey in normalizedData) {
+      console.log(`Converting ${sectionKey}...`);
+      editorFormatData[sectionKey] = convertMultilingualToEditorFormat(normalizedData[sectionKey]);
+
+      const convertedKeys = Object.keys(editorFormatData[sectionKey] || {});
+      console.log(`  ✓ ${sectionKey} converted, keys:`, convertedKeys.slice(0, 10).join(', '));
+
+      if (sectionKey === 'hero') {
+        console.log(`  Hero title:`, editorFormatData[sectionKey].title);
+        console.log(`  Hero subtitle:`, editorFormatData[sectionKey].subtitle);
+      }
+    }
+
+    console.log('\n=== Final Editor Data ===');
+    console.log('Sections:', Object.keys(editorFormatData).join(', '));
+    console.log('Hero data:', JSON.stringify(editorFormatData.hero, null, 2).substring(0, 300));
+
     return editorFormatData;
   } catch (error) {
     console.error('Error fetching section data:', error);

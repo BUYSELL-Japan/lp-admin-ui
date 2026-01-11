@@ -8,11 +8,14 @@ interface GalleryProps {
   data: any;
 }
 
+// 常に「すべて」カテゴリーを示す定数
+const ALL_CATEGORY = '__ALL__';
+
 export default function Gallery({ data }: GalleryProps) {
   const { currentLang } = useLanguage();
   const categories = data?.categories || [];
-  const allCategoryLabel = categories.length > 0 ? categories[0] : 'すべて';
-  const [selectedCategory, setSelectedCategory] = useState(allCategoryLabel);
+
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -22,7 +25,12 @@ export default function Gallery({ data }: GalleryProps) {
   const sectionTitle = getText(data?.sectionTitle, currentLang);
   const sectionSubtitle = getText(data?.sectionSubtitle, currentLang);
 
-  const filteredImages = selectedCategory === allCategoryLabel
+  // 言語切替時に「すべて」に戻す
+  useEffect(() => {
+    setSelectedCategory(ALL_CATEGORY);
+  }, [currentLang]);
+
+  const filteredImages = selectedCategory === ALL_CATEGORY
     ? images
     : images.filter((img: any) => getText(img.category, currentLang) === selectedCategory);
 
@@ -110,14 +118,18 @@ export default function Gallery({ data }: GalleryProps) {
           transition={{ duration: 0.6 }}
           className="flex flex-wrap justify-center gap-3 mb-12"
         >
-          {categories.map((category: any) => {
+          {categories.map((category: any, index: number) => {
             const categoryLabel = getText(category, currentLang);
+            // 最初のカテゴリーは「すべて」として扱う
+            const categoryValue = index === 0 ? ALL_CATEGORY : categoryLabel;
+            const isSelected = selectedCategory === categoryValue;
+
             return (
               <motion.button
                 key={categoryLabel}
-                onClick={() => setSelectedCategory(categoryLabel)}
+                onClick={() => setSelectedCategory(categoryValue)}
                 className={`px-6 py-3 rounded-full font-medium transition-all ${
-                  selectedCategory === categoryLabel
+                  isSelected
                     ? 'bg-teal-600 text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
                 }`}
