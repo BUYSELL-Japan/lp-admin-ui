@@ -399,8 +399,23 @@ export function GalleryEditor({ data, onUpdate }: EditorSectionProps) {
               <select
                 value={image.category || ''}
                 onChange={(e) => {
+                  const categoryValue = e.target.value;
+                  let categoryId = '';
+
+                  if (categoryValue === '料理') {
+                    categoryId = '1';
+                  } else if (categoryValue === '店内') {
+                    categoryId = '2';
+                  } else if (categoryValue === 'イベント') {
+                    categoryId = '3';
+                  }
+
                   const newImages = [...galleryData.images];
-                  newImages[index] = { ...image, category: e.target.value };
+                  newImages[index] = {
+                    ...image,
+                    category: categoryValue,
+                    categoryId: categoryId
+                  };
                   onUpdate({ images: newImages });
                 }}
                 className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"

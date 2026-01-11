@@ -457,7 +457,8 @@ function convertStringFieldsToMultilingual(obj: any, depth: number = 0): any {
 
       if (key === 'icon' || key === 'image' || key === 'url' || key === 'avatar' || key === 'backgroundImage' ||
           key === 'mainImage' || key === 'mapEmbedUrl' || key === 'link' || key === 'rating' || key === 'date' ||
-          key === 'year' || key === 'price' || key === 'isPopular' || key === 'id' || key === 'type' || key === 'platform') {
+          key === 'year' || key === 'price' || key === 'isPopular' || key === 'id' || key === 'type' || key === 'platform' ||
+          key === 'categoryId') {
         result[key] = value;
       } else if (typeof value === 'string') {
         result[key] = { ja: value, en: value, ko: value, 'zh-tw': value };
@@ -549,16 +550,32 @@ function normalizeDataStructure(data: any, sectionName: string): any {
 
     if (normalized.images && Array.isArray(normalized.images)) {
       normalized.images = normalized.images.map((img: any) => {
+        const processedImg: any = { ...img };
+
         if (img.caption && typeof img.caption === 'string') {
-          img.caption = { ja: img.caption, en: img.caption, ko: img.caption, 'zh-tw': img.caption };
+          processedImg.caption = { ja: img.caption, en: img.caption, ko: img.caption, 'zh-tw': img.caption };
         }
         if (img.alt && typeof img.alt === 'string') {
-          img.alt = { ja: img.alt, en: img.alt, ko: img.alt, 'zh-tw': img.alt };
+          processedImg.alt = { ja: img.alt, en: img.alt, ko: img.alt, 'zh-tw': img.alt };
         }
         if (img.category && typeof img.category === 'string') {
-          img.category = { ja: img.category, en: img.category, ko: img.category, 'zh-tw': img.category };
+          processedImg.category = { ja: img.category, en: img.category, ko: img.category, 'zh-tw': img.category };
         }
-        return img;
+
+        if (img.categoryId) {
+          processedImg.categoryId = img.categoryId;
+        } else if (img.category) {
+          const categoryStr = typeof img.category === 'string' ? img.category : img.category.ja;
+          if (categoryStr === '料理') {
+            processedImg.categoryId = '1';
+          } else if (categoryStr === '店内') {
+            processedImg.categoryId = '2';
+          } else if (categoryStr === 'イベント') {
+            processedImg.categoryId = '3';
+          }
+        }
+
+        return processedImg;
       });
     }
   }

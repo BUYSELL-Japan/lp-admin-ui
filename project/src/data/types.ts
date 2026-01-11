@@ -90,6 +90,7 @@ export interface GalleryImage {
   url: string;
   caption: string;
   category: string;
+  categoryId?: string;
 }
 
 export interface GalleryData {
