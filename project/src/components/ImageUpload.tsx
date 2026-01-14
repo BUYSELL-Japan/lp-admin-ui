@@ -49,15 +49,9 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
       const formData = new FormData();
       formData.append('image', file);
 
-      const s3Endpoint = localStorage.getItem('s3_upload_endpoint') || '';
+      const uploadEndpoint = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/assets/upload-url';
 
-      if (!s3Endpoint) {
-        alert('S3アップロードエンドポイントが設定されていません。設定から登録してください。');
-        setIsUploading(false);
-        return;
-      }
-
-      const response = await fetch(s3Endpoint, {
+      const response = await fetch(uploadEndpoint, {
         method: 'POST',
         body: formData,
       });
@@ -67,7 +61,7 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
       }
 
       const data = await response.json();
-      onChange(data.url);
+      onChange(data.s3Url);
     } catch (error) {
       console.error('Upload error:', error);
       alert('画像のアップロードに失敗しました');
