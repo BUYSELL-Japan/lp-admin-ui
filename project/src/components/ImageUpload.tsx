@@ -5,9 +5,10 @@ interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
   label: string;
+  storeId?: string;
 }
 
-export default function ImageUpload({ value, onChange, label }: ImageUploadProps) {
+export default function ImageUpload({ value, onChange, label, storeId }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,12 +47,12 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
     setIsUploading(true);
 
     try {
-      const storeId = localStorage.getItem('storeId') || 'default-store';
+      const uploadStoreId = storeId || 'default-store';
       const fileName = file.name;
       const contentType = file.type;
 
       console.log('Upload request data:', {
-        storeId,
+        storeId: uploadStoreId,
         fileName,
         contentType
       });
@@ -64,7 +65,7 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          storeId,
+          storeId: uploadStoreId,
           fileName,
           contentType
         }),

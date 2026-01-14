@@ -129,37 +129,37 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
     switch (activeSection) {
       case 'header':
-        return <HeaderEditor data={data} onUpdate={updateSectionData} />;
+        return <HeaderEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'hero':
-        return <HeroEditor data={data} onUpdate={updateSectionData} />;
+        return <HeroEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'about':
-        return <AboutEditor data={data} onUpdate={updateSectionData} />;
+        return <AboutEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'menu':
-        return <MenuEditor data={data} onUpdate={updateSectionData} />;
+        return <MenuEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'gallery':
-        return <GalleryEditor data={data} onUpdate={updateSectionData} />;
+        return <GalleryEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'staff':
-        return <StaffEditor data={data} onUpdate={updateSectionData} />;
+        return <StaffEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'reviews':
-        return <ReviewsEditor data={data} onUpdate={updateSectionData} />;
+        return <ReviewsEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'news':
-        return <NewsEditor data={data} onUpdate={updateSectionData} />;
+        return <NewsEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'storeInfo':
-        return <StoreInfoEditor data={data} onUpdate={updateSectionData} />;
+        return <StoreInfoEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'company':
-        return <CompanyEditor data={data} onUpdate={updateSectionData} />;
+        return <CompanyEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'access':
-        return <AccessEditor data={data} onUpdate={updateSectionData} />;
+        return <AccessEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'faq':
-        return <FAQEditor data={data} onUpdate={updateSectionData} />;
+        return <FAQEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'contact':
-        return <ContactEditor data={data} onUpdate={updateSectionData} />;
+        return <ContactEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'cta':
-        return <CTAEditor data={data} onUpdate={updateSectionData} />;
+        return <CTAEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'pricing':
-        return <PricingEditor data={data} onUpdate={updateSectionData} />;
+        return <PricingEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'footer':
-        return <FooterEditor data={data} onUpdate={updateSectionData} />;
+        return <FooterEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       default:
         return (
           <div className="text-center text-gray-500 py-8">

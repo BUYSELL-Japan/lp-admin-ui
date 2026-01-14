@@ -21,9 +21,10 @@ import type {
 interface EditorSectionProps {
   data: any;
   onUpdate: (updates: any) => void;
+  storeId?: string;
 }
 
-export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
+export function HeaderEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const headerData = data as HeaderData;
 
   if (!headerData || !headerData.logo) {
@@ -104,7 +105,7 @@ export function HeaderEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
+export function HeroEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const heroData = data as HeroData;
 
   if (!heroData) {
@@ -139,12 +140,13 @@ export function HeroEditor({ data, onUpdate }: EditorSectionProps) {
         value={heroData.backgroundImage || ''}
         onChange={(url) => onUpdate({ backgroundImage: url })}
         label="背景画像"
+        storeId={storeId}
       />
     </div>
   );
 }
 
-export function AboutEditor({ data, onUpdate }: EditorSectionProps) {
+export function AboutEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const aboutData = data as AboutData;
 
   if (!aboutData || !aboutData.features) {
@@ -203,6 +205,7 @@ export function AboutEditor({ data, onUpdate }: EditorSectionProps) {
               onUpdate({ features: newFeatures });
             }}
             label="画像"
+            storeId={storeId}
           />
         </div>
       ))}
@@ -210,7 +213,7 @@ export function AboutEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
+export function MenuEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const menuData = data as MenuData;
 
   if (!menuData || !menuData.items) {
@@ -338,6 +341,7 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
                 onUpdate({ items: newItems });
               }}
               label="画像"
+              storeId={storeId}
             />
           </div>
         ))}
@@ -346,7 +350,7 @@ export function MenuEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function GalleryEditor({ data, onUpdate }: EditorSectionProps) {
+export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const galleryData = data as GalleryData;
 
   if (!galleryData || !galleryData.images || !galleryData.categories) {
@@ -435,6 +439,7 @@ export function GalleryEditor({ data, onUpdate }: EditorSectionProps) {
                 onUpdate({ images: newImages });
               }}
               label="画像"
+              storeId={storeId}
             />
           </div>
         ))}
@@ -444,7 +449,7 @@ export function GalleryEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
+export function StaffEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const staffData = data as StaffData;
 
   if (!staffData || !staffData.members) {
@@ -527,6 +532,7 @@ export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
               onUpdate({ members: newMembers });
             }}
             label="画像"
+            storeId={storeId}
           />
         </div>
       ))}
@@ -534,7 +540,7 @@ export function StaffEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
+export function NewsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const newsData = data as NewsData;
 
   if (!newsData || !newsData.items) {
@@ -629,7 +635,7 @@ export function NewsEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
+export function StoreInfoEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const storeData = data as StoreInfoData;
 
   if (!storeData || !storeData.items) {
@@ -715,6 +721,7 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
         value={storeData.mainImage || ''}
         onChange={(url) => onUpdate({ mainImage: url })}
         label="メイン画像"
+        storeId={storeId}
       />
       <div>
         <label className="block text-sm font-medium text-gray-700">画像キャプション</label>
@@ -729,7 +736,7 @@ export function StoreInfoEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
+export function CTAEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const ctaData = data as CTAData;
 
   if (!ctaData) {
@@ -773,12 +780,13 @@ export function CTAEditor({ data, onUpdate }: EditorSectionProps) {
         value={ctaData.backgroundImage || ''}
         onChange={(url) => onUpdate({ backgroundImage: url })}
         label="背景画像"
+        storeId={storeId}
       />
     </div>
   );
 }
 
-export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
+export function PricingEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const pricingData = data as PricingData;
 
   if (!pricingData || !pricingData.plans) {
@@ -857,7 +865,7 @@ export function PricingEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
+export function FooterEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const footerData = data as FooterData;
 
   if (!footerData || !footerData.businessHours || !footerData.social || !footerData.social.links) {
@@ -988,7 +996,7 @@ export function FooterEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
+export function ReviewsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const reviewsData = data as ReviewsData;
 
   if (!reviewsData || !reviewsData.reviews) {
@@ -1087,6 +1095,7 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
                 onUpdate({ reviews: newReviews });
               }}
               label="アバター画像"
+              storeId={storeId}
             />
           </div>
         ))}
@@ -1096,7 +1105,7 @@ export function ReviewsEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
+export function CompanyEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const companyData = data as CompanyData;
 
   if (!companyData || !companyData.philosophy || !companyData.history || !companyData.history.timeline || !companyData.companyInfo || !companyData.companyInfo.items) {
@@ -1252,7 +1261,7 @@ export function CompanyEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function AccessEditor({ data, onUpdate }: EditorSectionProps) {
+export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const accessData = data as AccessData;
 
   if (!accessData || !accessData.parking || !accessData.transportation || !accessData.transportation.methods) {
@@ -1400,7 +1409,7 @@ export function AccessEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function FAQEditor({ data, onUpdate }: EditorSectionProps) {
+export function FAQEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const faqData = data as FAQData;
 
   if (!faqData || !faqData.items) {
@@ -1468,7 +1477,7 @@ export function FAQEditor({ data, onUpdate }: EditorSectionProps) {
   );
 }
 
-export function ContactEditor({ data, onUpdate }: EditorSectionProps) {
+export function ContactEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const contactData = data as ContactData;
 
   if (!contactData || !contactData.fields) {
