@@ -46,22 +46,54 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      const storeId = localStorage.getItem('storeId') || 'default-store';
+      const fileName = file.name;
+      const contentType = file.type;
+
+      console.log('Upload request data:', {
+        storeId,
+        fileName,
+        contentType
+      });
 
       const uploadEndpoint = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/assets/upload-url';
 
       const response = await fetch(uploadEndpoint, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          storeId,
+          fileName,
+          contentType
+        }),
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('アップロードに失敗しました');
+        const errorText = await response.text();
+        console.error('Upload error response:', errorText);
+        throw new Error(`アップロードに失敗しました: ${response.status}`);
       }
 
       const data = await response.json();
-      onChange(data.s3Url);
+      console.log('Response data:', data);
+
+      if (data.uploadUrl && data.s3Url) {
+        await fetch(data.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': contentType,
+          },
+          body: file,
+        });
+
+        onChange(data.s3Url);
+      } else {
+        throw new Error('presigned URLが取得できませんでした');
+      }
     } catch (error) {
       console.error('Upload error:', error);
       alert('画像のアップロードに失敗しました');
