@@ -353,7 +353,7 @@ export const companyData: CompanyData = {
   history: {
     title: '沿革',
     timeline: [
-      { year: '2015年', event: '株式会社サンプルダイニング設立' },
+      { year: '2015年', event: '株式会社YUIダイニング設立' },
       { year: '2016年', event: '第1号店「和ダイニング 結」オープン' },
       { year: '2019年', event: 'デリバリー・ケータリング事業を開始' },
       { year: '2023年', event: '食育・地域貢献活動として地元小学校での料理教室を支援' },
@@ -362,7 +362,7 @@ export const companyData: CompanyData = {
   companyInfo: {
     title: '会社概要',
     items: [
-      { label: '商号', value: '株式会社サンプルダイニング' },
+      { label: '商号', value: '株式会社YUIダイニング' },
       { label: '設立', value: '2015年4月' },
       { label: '代表者', value: '山田 太郎' },
       { label: '所在地', value: '東京都渋谷区〇〇 1-2-3' },
