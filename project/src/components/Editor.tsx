@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Settings, LogIn, Languages } from 'lucide-react';
+import { Save, Settings, LogIn, Languages, LogOut } from 'lucide-react';
 import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
+import { clearAuthData } from '../services/auth';
 import {
   HeaderEditor,
   HeroEditor,
@@ -31,6 +32,7 @@ interface EditorProps {
 }
 
 const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
+const LOGOUT_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/logout?client_id=12nf22nqg8mpcq1q77nm5uqbls&logout_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
 export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
@@ -104,6 +106,11 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         onSubdomainFetched(subdomain);
       }
     }
+  };
+
+  const handleLogout = () => {
+    clearAuthData();
+    window.location.href = LOGOUT_URL;
   };
 
   const handleSettingsSave = () => {
@@ -218,6 +225,13 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               >
                 <Languages size={16} />
                 翻訳し確定
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+              >
+                <LogOut size={16} />
+                ログアウト
               </button>
             </>
           )}
