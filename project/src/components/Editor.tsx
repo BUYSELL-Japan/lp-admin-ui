@@ -244,7 +244,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               <button
                 onClick={handleSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className="w-full h-10 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm"
+                className="w-full h-10 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
               >
                 <Save size={16} className={isSaving ? 'animate-pulse text-indigo-500' : 'text-gray-500'} />
                 {isSaving ? '保存中...' : '下書き保存'}
@@ -253,7 +253,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               <button
                 onClick={handlePublish}
                 disabled={isSaving || isPublishing || isTranslating}
-                className="w-full h-10 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-bold transition-all shadow-md ring-1 ring-gray-900"
+                className="w-full h-10 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-bold transition-all shadow-md ring-1 ring-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
               >
                 <Globe size={16} className={isPublishing ? 'animate-spin' : ''} />
                 {isPublishing ? '処理中...' : '公開 (Publish)'}
@@ -262,7 +262,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               <button
                 onClick={handleTranslateAndSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className="w-full h-10 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm"
+                className="w-full h-10 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
               >
                 <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
                 多言語で確定
@@ -270,12 +270,12 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                className="w-full h-10 bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-lg flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200"
               >
                 <LogOut size={16} />
                 ログアウト
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
