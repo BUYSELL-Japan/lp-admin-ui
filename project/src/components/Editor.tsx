@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, Settings, LogIn, Languages, LogOut } from 'lucide-react';
-import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
+import { Save, Settings, LogIn, Languages, LogOut, Globe } from 'lucide-react';
+import { saveAllSections, getSubdomain, translateAndSave, triggerDeployWebhook } from '../services/api';
 import { clearAuthData } from '../services/auth';
 import {
   HeaderEditor,
@@ -37,6 +37,7 @@ const LOGOUT_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazonco
 export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationProgress, setTranslationProgress] = useState({ current: 0, total: 0, sectionName: '' });
   const [showSettings, setShowSettings] = useState(false);
@@ -75,10 +76,33 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       return;
     }
     setIsSaving(true);
-    const success = await saveAllSections(userId, sectionData);
+    const success = await saveAllSections(userId, sectionData, 'Draft');
     setIsSaving(false);
     if (success) {
-      alert('すべてのセクションを保存しました');
+      alert('すべてのセクションを下書き保存しました');
+      const subdomain = await getSubdomain(userId);
+      if (subdomain && onSubdomainFetched) {
+        onSubdomainFetched(subdomain);
+      }
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!userId) {
+      alert('公開するにはログインが必要です');
+      return;
+    }
+    setIsPublishing(true);
+    const success = await saveAllSections(userId, sectionData, 'Published');
+    setIsPublishing(false);
+    if (success) {
+      const webhookSuccess = await triggerDeployWebhook();
+      if (webhookSuccess) {
+        alert('すべてのセクションを「公開」ステータスで保存・反映しました！\n（約1分で本番サイトへ反映されます）');
+      } else {
+        alert('データの保存には成功しましたが、ビルドの自動実行（Webhook）に失敗しました。');
+      }
+
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
         onSubdomainFetched(subdomain);
@@ -212,15 +236,23 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving || isTranslating}
+                disabled={isSaving || isPublishing || isTranslating}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={16} />
                 {isSaving ? '保存中...' : '保存'}
               </button>
               <button
+                onClick={handlePublish}
+                disabled={isSaving || isPublishing || isTranslating}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 font-medium"
+              >
+                <Globe size={16} />
+                {isPublishing ? '公開処理中...' : '公開 (Publish)'}
+              </button>
+              <button
                 onClick={handleTranslateAndSave}
-                disabled={isSaving || isTranslating}
+                disabled={isSaving || isPublishing || isTranslating}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
               >
                 <Languages size={16} />

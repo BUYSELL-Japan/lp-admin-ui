@@ -23,6 +23,23 @@ const SETTINGS_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazona
 const CONTENT_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/get-content';
 const TRANSLATE_ENDPOINT = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/translate';
 
+// Cloudflare Deploy Webhook URL
+const CLOUDFLARE_WEBHOOK_URL = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/8c8ca4f1-f500-41c5-968a-4c92046077e8';
+
+export async function triggerDeployWebhook(): Promise<boolean> {
+  try {
+    const response = await fetch(CLOUDFLARE_WEBHOOK_URL, { method: 'POST' });
+    if (!response.ok) {
+      throw new Error('Webhook request failed');
+    }
+    console.log('Deploy Webhook triggered successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to trigger webhook:', error);
+    return false;
+  }
+}
+
 // 有効なセクション名のリスト
 const VALID_SECTIONS = [
   'header', 'hero', 'about', 'menu', 'pricing', 'cta',
@@ -93,9 +110,9 @@ export async function saveSection(userId: string, section: string, data: any): P
 
 // No longer needed - Lambda returns multilingual object format
 
-export async function saveAllSections(userId: string, allSectionData: any): Promise<boolean> {
+export async function saveAllSections(userId: string, allSectionData: any, status: 'Draft' | 'Published' = 'Draft'): Promise<boolean> {
   try {
-    console.log('=== Saving all sections (with normalization) ===');
+    console.log(`=== Saving all sections (Status: ${status}, with normalization) ===`);
 
     const normalizedContent: any = {};
 
@@ -112,6 +129,7 @@ export async function saveAllSections(userId: string, allSectionData: any): Prom
       storeId: userId,
       section: 'all',
       content: normalizedContent,
+      status: status
     };
 
     const response = await fetch(API_ENDPOINT, {
