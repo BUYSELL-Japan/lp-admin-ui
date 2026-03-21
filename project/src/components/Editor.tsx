@@ -209,19 +209,19 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       )}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold">エディター</h2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           {!isAuthenticated && !isAuthenticating && (
             <a
               href={LOGIN_URL}
-              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2 text-sm font-medium"
+              className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-black flex items-center gap-2 text-sm font-semibold transition-all duration-200 shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 ring-1 ring-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
             >
-              <LogIn size={16} />
+              <LogIn size={18} />
               ログイン
             </a>
           )}
           {isAuthenticating && (
-            <div className="px-4 py-2 text-sm text-gray-500 flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
+            <div className="px-5 py-2.5 text-sm font-medium text-gray-500 flex items-center gap-3 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-700"></div>
               認証中...
             </div>
           )}
@@ -229,35 +229,43 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
             <>
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2"
+                className="p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                title="設定"
               >
-                <Settings size={16} />
-                設定
+                <Settings size={20} />
               </button>
+              
+              <div className="h-6 w-px bg-gray-200 mx-1"></div>
+              
               <button
                 onClick={handleSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
               >
-                <Save size={16} />
-                {isSaving ? '保存中...' : '保存'}
+                <Save size={16} className={isSaving ? 'animate-pulse text-indigo-500' : 'text-gray-500'} />
+                {isSaving ? '保存中...' : '下書き保存'}
               </button>
-              <button
-                onClick={handlePublish}
-                disabled={isSaving || isPublishing || isTranslating}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 font-medium"
-              >
-                <Globe size={16} />
-                {isPublishing ? '公開処理中...' : '公開 (Publish)'}
-              </button>
+              
               <button
                 onClick={handleTranslateAndSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
               >
-                <Languages size={16} />
-                翻訳し確定
+                <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
+                多言語で確定
               </button>
+              
+              <button
+                onClick={handlePublish}
+                disabled={isSaving || isPublishing || isTranslating}
+                className="px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-bold transition-all duration-200 shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 ring-1 ring-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ml-1"
+              >
+                <Globe size={16} className={isPublishing ? 'animate-spin' : ''} />
+                {isPublishing ? '処理中...' : '公開 (Publish)'}
+              </button>
+
+              <div className="h-6 w-px bg-gray-200 mx-1"></div>
+
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
