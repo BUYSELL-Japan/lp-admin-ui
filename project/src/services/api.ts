@@ -227,6 +227,12 @@ export async function getSectionData(storeId: string): Promise<any | null> {
     console.log('result.ContentData exists:', !!result.ContentData);
     console.log('========================');
 
+    const returnedStoreId = result.storeId || result.StoreId || (result.ContentData && (result.ContentData.storeId || result.ContentData.StoreId));
+    if (returnedStoreId && returnedStoreId !== storeId) {
+      console.warn(`[SECURITY] API returned data for store: ${returnedStoreId}, but requested: ${storeId}. Rejecting response to load initial sample data.`);
+      return null; // Return null to fallback to initial sample data
+    }
+
     let contentData = null;
 
     if (result.ContentData) {
