@@ -19,6 +19,7 @@ import {
   AccessEditor,
   FAQEditor,
   ContactEditor,
+  SettingsEditor,
 } from './EditorSections';
 import TranslationLoadingModal from './TranslationLoadingModal';
 
@@ -44,6 +45,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
   const sections = [
+    { id: 'settings', label: '基本設定/テーマ' },
     { id: 'header', label: 'ヘッダー' },
     { id: 'hero', label: 'ヒーロー' },
     { id: 'about', label: 'こだわり' },
@@ -159,6 +161,8 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     }
 
     switch (activeSection) {
+      case 'settings':
+        return <SettingsEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'header':
         return <HeaderEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'hero':

@@ -14,7 +14,8 @@ import type {
   FAQData,
   CTAData,
   PricingData,
-  CompanyData
+  CompanyData,
+  SettingsData
 } from './types';
 
 export const headerData: HeaderData = {
@@ -417,4 +418,8 @@ export const footerData: FooterData = {
     ],
   },
   copyright: '© 2024 和ダイニング 結 -YUI-. All rights reserved.',
+};
+
+export const settingsData: SettingsData = {
+  theme: 'theme1',
 };

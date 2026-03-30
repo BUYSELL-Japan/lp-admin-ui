@@ -156,7 +156,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   }
 }
 
-export async function getSubdomain(storeId: string): Promise<string | null> {
+export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null }> {
   try {
     const response = await fetch(`${SETTINGS_ENDPOINT}/${storeId}`, {
       method: 'GET',
@@ -168,18 +168,25 @@ export async function getSubdomain(storeId: string): Promise<string | null> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error:', errorText);
-      throw new Error('Failed to fetch subdomain');
+      throw new Error('Failed to fetch store info');
     }
 
     const result = await response.json();
-    console.log('Subdomain API Response:', result);
-    console.log('Subdomain value:', result.subdomain);
+    console.log('Store Info API Response:', result);
 
-    return result.subdomain || result.Subdomain || null;
+    return {
+      subdomain: result.subdomain || result.Subdomain || null,
+      subscriptionStatus: result.subscription_status || result.subscriptionStatus || null
+    };
   } catch (error) {
-    console.error('Error fetching subdomain:', error);
-    return null;
+    console.error('Error fetching store info:', error);
+    return { subdomain: null, subscriptionStatus: null };
   }
+}
+
+export async function getSubdomain(storeId: string): Promise<string | null> {
+  const info = await getStoreInfo(storeId);
+  return info.subdomain;
 }
 
 // 多言語オブジェクトから日本語のみを抽出する関数

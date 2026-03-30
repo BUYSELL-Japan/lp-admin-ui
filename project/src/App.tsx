@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, Edit } from 'lucide-react';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
+import PaymentWall from './components/PaymentWall';
 import { LanguageProvider } from './contexts/LanguageContext';
 import {
   exchangeCodeForTokens,
@@ -11,7 +12,7 @@ import {
   getStoredStoreId,
   clearAuthData,
 } from './services/auth';
-import { getSubdomain, getSectionData } from './services/api';
+import { getSubdomain, getSectionData, getStoreInfo } from './services/api';
 import {
   headerData,
   heroData,
@@ -29,12 +30,15 @@ import {
   faqData,
   contactData,
   footerData,
+  settingsData,
 } from './data/content';
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [sectionData, setSectionData] = useState({
     header: headerData,
@@ -53,6 +57,7 @@ function App() {
     faq: faqData,
     contact: contactData,
     footer: footerData,
+    settings: settingsData,
   });
 
   useEffect(() => {
@@ -133,6 +138,15 @@ function App() {
   useEffect(() => {
     const loadSectionData = async () => {
       if (userId) {
+        setIsCheckingSubscription(true);
+        try {
+          const storeInfo = await getStoreInfo(userId);
+          setSubdomain(storeInfo.subdomain);
+          setSubscriptionStatus(storeInfo.subscriptionStatus);
+        } catch (error) {
+          console.error('Error checking store info', error);
+        }
+
         console.log('=== Loading Section Data ===');
         console.log('User ID:', userId);
         const savedData = await getSectionData(userId);
@@ -222,6 +236,7 @@ function App() {
           console.log('No saved data found, using default data');
         }
         console.log('===========================');
+        setIsCheckingSubscription(false);
       }
     };
 
@@ -273,15 +288,24 @@ function App() {
           <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
             <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
           </div>
-          <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block`}>
-            <Editor
-              userId={userId}
-              sectionData={sectionData}
-              onSectionChange={handleSectionChange}
-              isAuthenticated={!!userId}
-              isAuthenticating={isAuthenticating}
-              onSubdomainFetched={handleSubdomainFetched}
-            />
+          <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block bg-white overflow-y-auto`}>
+            {userId && isCheckingSubscription ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p>契約状況を確認しています...</p>
+              </div>
+            ) : userId && subscriptionStatus !== 'active' ? (
+              <PaymentWall storeId={userId} />
+            ) : (
+              <Editor
+                userId={userId}
+                sectionData={sectionData}
+                onSectionChange={handleSectionChange}
+                isAuthenticated={!!userId}
+                isAuthenticating={isAuthenticating}
+                onSubdomainFetched={handleSubdomainFetched}
+              />
+            )}
           </div>
         </div>
       </div>

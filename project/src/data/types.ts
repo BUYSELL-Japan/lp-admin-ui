@@ -228,3 +228,7 @@ export interface CompanyInfoItem {
   label: string;
   value: string;
 }
+
+export interface SettingsData {
+  theme: string;
+}

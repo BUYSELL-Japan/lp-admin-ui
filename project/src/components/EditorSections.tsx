@@ -16,6 +16,7 @@ import type {
   AccessData,
   FAQData,
   ContactData,
+  SettingsData,
 } from '../data/types';
 
 interface EditorSectionProps {
@@ -1563,6 +1564,64 @@ export function ContactEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           onChange={(e) => onUpdate({ submitButton: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+    </div>
+  );
+}
+
+export function SettingsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
+  const settingsData = data as SettingsData;
+
+  if (!settingsData) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        設定データが読み込まれていません
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-4">デザインテーマの選択</label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <label className={`cursor-pointer border-2 rounded-lg p-4 flex flex-col items-center gap-3 transition-all ${settingsData.theme === 'theme1' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+            <input 
+              type="radio" 
+              name="theme" 
+              value="theme1" 
+              checked={settingsData.theme === 'theme1'} 
+              onChange={() => onUpdate({ theme: 'theme1' })} 
+              className="sr-only" 
+            />
+            <div className="w-full h-24 bg-gray-100 rounded flex items-center justify-center text-gray-400 font-medium">Standard</div>
+            <span className="font-bold text-sm text-gray-800">Theme 1 (標準)</span>
+          </label>
+          <label className={`cursor-pointer border-2 rounded-lg p-4 flex flex-col items-center gap-3 transition-all ${settingsData.theme === 'theme2' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+            <input 
+              type="radio" 
+              name="theme" 
+              value="theme2" 
+              checked={settingsData.theme === 'theme2'} 
+              onChange={() => onUpdate({ theme: 'theme2' })} 
+              className="sr-only" 
+            />
+            <div className="w-full h-24 bg-gray-100 rounded flex items-center justify-center text-gray-400 font-medium border border-dashed border-gray-300">Modern</div>
+            <span className="font-bold text-sm text-gray-800">Theme 2 (モダン)</span>
+          </label>
+          <label className={`cursor-pointer border-2 rounded-lg p-4 flex flex-col items-center gap-3 transition-all ${settingsData.theme === 'theme3' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+            <input 
+              type="radio" 
+              name="theme" 
+              value="theme3" 
+              checked={settingsData.theme === 'theme3'} 
+              onChange={() => onUpdate({ theme: 'theme3' })} 
+              className="sr-only" 
+            />
+            <div className="w-full h-24 bg-gray-100 rounded flex items-center justify-center text-gray-400 font-medium border border-dashed border-gray-300">Elegant</div>
+            <span className="font-bold text-sm text-gray-800">Theme 3 (エレガント)</span>
+          </label>
+        </div>
       </div>
     </div>
   );
