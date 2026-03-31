@@ -1288,6 +1288,66 @@ async function translateStoreInfoSection(userId: string, storeInfoContent: any):
   return mergedResult;
 }
 
+async function translateGallerySection(userId: string, sectionContent: any): Promise<any> {
+  console.log('\n=== translateGallerySection ===');
+  
+  // 基本フィールド（カテゴリ含む）の翻訳
+  const baseFields = {
+    sectionTitle: sectionContent.sectionTitle,
+    sectionSubtitle: sectionContent.sectionSubtitle,
+    categories: sectionContent.categories
+  };
+  
+  console.log('  Translating base fields and categories...');
+  const translatedBaseResult = await translateItem(userId, 'gallery-base-fields', baseFields);
+  const translatedBaseFields = translatedBaseResult?.content || translatedBaseResult || baseFields;
+  
+  // 画像リストの翻訳（1枚ずつ）
+  const items = sectionContent.images || [];
+  const translatedItems: any[] = [];
+  
+  for (let i = 0; i < items.length; i++) {
+    console.log(`\n  [${i + 1}/${items.length}] Translating image caption: "${items[i].caption}"...`);
+    
+    // 画像は caption と category だけを翻訳対象として送信し、urlはそのまま保持
+    const itemToTranslate = {
+      caption: items[i].caption,
+      category: items[i].category
+    };
+    
+    try {
+      const result = await translateItem(userId, `gallery-image-${i}`, itemToTranslate);
+      const translatedData = result?.content || result || itemToTranslate;
+      
+      translatedItems.push({
+        url: items[i].url, // URLは翻訳に投げず、そのまま保持する
+        caption: translatedData.caption || items[i].caption,
+        category: translatedData.category || items[i].category
+      });
+      
+      if (i < items.length - 1) {
+        console.log('  Waiting 3s before next image...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to translate gallery image ${i + 1}:`, error);
+      throw error;
+    }
+  }
+  
+  const mergedResult = {
+    gallery: {
+      sectionTitle: translatedBaseFields.sectionTitle,
+      sectionSubtitle: translatedBaseFields.sectionSubtitle,
+      categories: translatedBaseFields.categories,
+      images: translatedItems
+    }
+  };
+  
+  console.log(`\n  ✓ Gallery section completed. Total items: ${translatedItems.length}`);
+  return mergedResult;
+}
+
 async function translateArraySectionOneByOne(
   userId: string,
   sectionName: string,
@@ -1398,6 +1458,11 @@ async function translateSectionInBatches(
   if (sectionName === 'storeInfo') {
     console.log(`${sectionName}: Using specialized storeInfo translation function`);
     return translateStoreInfoSection(userId, sectionContent);
+  }
+
+  if (sectionName === 'gallery') {
+    console.log(`${sectionName}: Using specialized gallery translation function`);
+    return translateGallerySection(userId, sectionContent);
   }
 
   let BATCH_SIZE = 4;
