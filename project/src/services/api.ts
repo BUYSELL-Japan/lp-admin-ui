@@ -1703,6 +1703,7 @@ export async function translateAndSave(
       storeId: userId,
       section: 'all',
       content: mergedContent,
+      Status: 'Published', // 翻訳保存時にStatusがDraftにリセットされないよう明示的に指定
     };
 
     console.log('\nSaving translated content with', Object.keys(mergedContent).length, 'sections...');
