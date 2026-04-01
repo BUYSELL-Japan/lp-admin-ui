@@ -696,10 +696,18 @@ async function translateItem(
 
     let extractedContent: any = null;
 
-    if (response.content && typeof response.content === 'object') {
-      console.log(`  ✓ Extracted content from response.content for ${itemId}`);
-      extractedContent = response.content;
+    // APIレスポンスの形式: { "sectionId": { "field": {...多言語...} } } の形式
+    // まずitemIdをキーとするデータを探す
+    if (response[itemId] && typeof response[itemId] === 'object') {
+      console.log(`  ✓ Extracted content from response[${itemId}] for ${itemId}`);
+      extractedContent = response[itemId];
     }
+    // 旧バージョン互換: response.content フィールドがある場合
+    else if (response.content && typeof response.content === 'object') {
+      console.log(`  ✓ Extracted content from response.content for ${itemId}`);
+      extractedContent = response.content[itemId] || response.content;
+    }
+    // メタデータフィールド以外のキーをコンテンツとみなす
     else if (response.storeId || response.section || response.targetLanguages) {
       console.log(`  API response contains metadata fields, extracting content for ${itemId}`);
       const contentOnly: any = {};
@@ -791,7 +799,14 @@ async function translateSection(
 
     let extractedContent: any = null;
 
-    if (response.content && typeof response.content === 'object') {
+    // APIレスポンスの形式: { "sectionName": { ...多言語フィールド... } }
+    // まずsectionNameをキーとするデータを探す（これが正しい形式）
+    if (response[sectionName] && typeof response[sectionName] === 'object') {
+      console.log(`  ✓ Extracted content from response[${sectionName}] - correct format`);
+      extractedContent = { [sectionName]: response[sectionName] };
+    }
+    // 旧バージョン互換: response.content フィールドがある場合
+    else if (response.content && typeof response.content === 'object') {
       console.log(`  Extracted content keys for ${sectionName}:`, Object.keys(response.content).join(', '));
       extractedContent = response.content;
     }
