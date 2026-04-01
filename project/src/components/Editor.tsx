@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, LogIn, Languages, LogOut, Globe } from 'lucide-react';
-import { saveAllSections, getSubdomain, translateAndSave, triggerDeployWebhook } from '../services/api';
+import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
 import { clearAuthData } from '../services/auth';
 import {
   HeaderEditor,
@@ -95,16 +95,11 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       return;
     }
     setIsPublishing(true);
+    // Lambda側でCloudflare Webhookも自動でトリガーされる
     const success = await saveAllSections(userId, sectionData, 'Published');
     setIsPublishing(false);
     if (success) {
-      const webhookSuccess = await triggerDeployWebhook();
-      if (webhookSuccess) {
-        alert('すべてのセクションを「公開」ステータスで保存・反映しました！\n（約1分で本番サイトへ反映されます）');
-      } else {
-        alert('データの保存には成功しましたが、ビルドの自動実行（Webhook）に失敗しました。');
-      }
-
+      alert('すべてのセクションを「公開」ステータスで保存・反映しました！\n（約1分で本番サイトへ反映されます）');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
         onSubdomainFetched(subdomain);
