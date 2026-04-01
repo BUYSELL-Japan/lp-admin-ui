@@ -1491,8 +1491,8 @@ async function translateSectionInBatches(
     try {
       return await translateSection(userId, sectionName, sectionContent);
     } catch (error: any) {
-      if (error.message?.includes('504') || error.message?.includes('500')) {
-        console.warn(`${sectionName}: Got timeout/error with ${items.length} items, falling back to one-by-one processing`);
+      if (error.message?.includes('504') || error.message?.includes('500') || error.message?.includes('Failed to fetch') || error.message?.includes('Fetch')) {
+        console.warn(`${sectionName}: Got timeout/CORS error with ${items.length} items, falling back to one-by-one processing`);
         return translateArraySectionOneByOne(userId, sectionName, sectionContent, mainArrayField, items);
       }
       throw error;
@@ -1523,8 +1523,8 @@ async function translateSectionInBatches(
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       }
     } catch (error: any) {
-      if ((error.message?.includes('504') || error.message?.includes('500')) && currentBatchSize > 1) {
-        console.warn(`${sectionName}: Batch ${batchNumber} failed with timeout/error, reducing batch size to 1 and retrying remaining items`);
+      if ((error.message?.includes('504') || error.message?.includes('500') || error.message?.includes('Failed to fetch') || error.message?.includes('Fetch')) && currentBatchSize > 1) {
+        console.warn(`${sectionName}: Batch ${batchNumber} failed with timeout/CORS error, reducing batch size to 1 and retrying remaining items`);
 
         const remainingItems = items.slice(i);
         console.log(`${sectionName}: Processing ${remainingItems.length} remaining items one by one...`);
