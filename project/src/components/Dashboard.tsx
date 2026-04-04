@@ -61,7 +61,7 @@ const Dashboard: React.FC<DashboardProps> = ({ storeId, subscriptionStatus, onOp
             status: result.subscription_status || result.subscriptionStatus || subscriptionStatus,
             currentPeriodEnd: result.current_period_end || result.currentPeriodEnd || null,
             trialEnd: result.trial_end || result.trialEnd || null,
-            cancelAtPeriodEnd: result.cancel_at_period_end || result.cancelAtPeriodEnd || false,
+            cancelAtPeriodEnd: result.cancel_at_period_end ?? result.cancelAtPeriodEnd ?? false,
             stripeCustomerId: result.stripe_customer_id || result.stripeCustomerId || null,
           });
         }
