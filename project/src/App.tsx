@@ -3,6 +3,7 @@ import { Eye, Edit } from 'lucide-react';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
 import PaymentWall from './components/PaymentWall';
+import Dashboard from './components/Dashboard';
 import { LanguageProvider } from './contexts/LanguageContext';
 import {
   exchangeCodeForTokens,
@@ -40,6 +41,7 @@ function App() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [showDashboard, setShowDashboard] = useState(true);
   const [sectionData, setSectionData] = useState({
     header: headerData,
     hero: heroData,
@@ -294,8 +296,14 @@ function App() {
                 <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p>契約状況を確認しています...</p>
               </div>
-            ) : userId && subscriptionStatus !== 'active' ? (
+            ) : userId && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' ? (
               <PaymentWall storeId={userId} />
+            ) : userId && showDashboard ? (
+              <Dashboard
+                storeId={userId}
+                subscriptionStatus={subscriptionStatus}
+                onOpenEditor={() => setShowDashboard(false)}
+              />
             ) : (
               <Editor
                 userId={userId}
@@ -304,6 +312,7 @@ function App() {
                 isAuthenticated={!!userId}
                 isAuthenticating={isAuthenticating}
                 onSubdomainFetched={handleSubdomainFetched}
+                onBackToDashboard={() => setShowDashboard(true)}
               />
             )}
           </div>
