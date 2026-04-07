@@ -142,7 +142,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   }
 }
 
-export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null }> {
+export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null, planName?: string | null, trialEnd?: string | null }> {
   try {
     const response = await fetch(`${SETTINGS_ENDPOINT}/${storeId}`, {
       method: 'GET',
@@ -162,11 +162,13 @@ export async function getStoreInfo(storeId: string): Promise<{ subdomain: string
 
     return {
       subdomain: result.subdomain || result.Subdomain || null,
-      subscriptionStatus: result.subscription_status || result.subscriptionStatus || null
+      subscriptionStatus: result.subscription_status || result.subscriptionStatus || null,
+      planName: result.plan_name || result.planName || null,
+      trialEnd: result.trial_end || result.trialEnd || null
     };
   } catch (error) {
     console.error('Error fetching store info:', error);
-    return { subdomain: null, subscriptionStatus: null };
+    return { subdomain: null, subscriptionStatus: null, planName: null, trialEnd: null };
   }
 }
 

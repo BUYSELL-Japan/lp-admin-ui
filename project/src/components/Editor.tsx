@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Settings, LogIn, Languages, LogOut, Globe, ArrowLeft } from 'lucide-react';
+import { Save, Settings, LogIn, Languages, LogOut, Globe } from 'lucide-react';
 import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
 import { clearAuthData } from '../services/auth';
 import {
@@ -30,13 +30,12 @@ interface EditorProps {
   isAuthenticated: boolean;
   isAuthenticating: boolean;
   onSubdomainFetched?: (subdomain: string | null) => void;
-  onBackToDashboard?: () => void;
 }
 
 const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 const LOGOUT_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/logout?client_id=12nf22nqg8mpcq1q77nm5uqbls&logout_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
-export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched, onBackToDashboard }: EditorProps) {
+export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -209,15 +208,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       )}
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-b border-gray-200 gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-          {onBackToDashboard && (
-            <button
-              onClick={onBackToDashboard}
-              className="p-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-              title="ダッシュボードに戻る"
-            >
-              <ArrowLeft size={20} />
-            </button>
-          )}
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">エディター</h2>
           {isAuthenticated && (
             <button

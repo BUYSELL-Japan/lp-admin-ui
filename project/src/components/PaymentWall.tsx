@@ -7,6 +7,7 @@ interface PaymentWallProps {
 
 const PaymentWall: React.FC<PaymentWallProps> = ({ storeId }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [planType, setPlanType] = useState<'monthly' | 'yearly'>('monthly');
 
   // TODO: Stripe API Gateway Endpointを設定してください
   // 確認された本番用API Gatewayエンドポイント
@@ -21,16 +22,23 @@ const PaymentWall: React.FC<PaymentWallProps> = ({ storeId }) => {
          return;
       }
 
+      // Lambdaが要求する形式に合わせて、選択されたプランのprice_idを送信
+      const price_id = planType === 'yearly' 
+        ? "price_1TGBYLF0xTh0wRdTVNBi6kj4" 
+        : "price_1TGpUOF0xTh0wRdTLx34wepz";
+
       const response = await fetch(STRIPE_CHECKOUT_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ storeId }),
+        body: JSON.stringify({ storeId, price_id }),
       });
 
       if (!response.ok) {
-        throw new Error('決済セッションの作成に失敗しました');
+        const errorText = await response.text();
+        console.error('Backend returned an error:', response.status, errorText);
+        throw new Error('決済セッションの作成に失敗しました: ' + errorText);
       }
 
       const { url } = await response.json();
@@ -62,11 +70,41 @@ const PaymentWall: React.FC<PaymentWallProps> = ({ storeId }) => {
         <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
           人気
         </div>
+
+        {/* プラン切り替えトグル */}
+        <div className="flex bg-gray-100 p-1 rounded-lg mb-6 relative">
+          <button
+            onClick={() => setPlanType('monthly')}
+            className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all z-10 ${planType === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            月額払い
+          </button>
+          <button
+            onClick={() => setPlanType('yearly')}
+            className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all z-10 flex items-center justify-center gap-1 ${planType === 'yearly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            年額払い
+            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">20%OFF</span>
+          </button>
+        </div>
+
         <div className="text-left">
           <h3 className="text-lg font-bold text-gray-900 mb-2">プレミアムプラン</h3>
-          <div className="flex items-baseline gap-1 mb-4">
-            <span className="text-3xl font-extrabold text-gray-900">¥2,980</span>
-            <span className="text-gray-500 font-medium">/月</span>
+          <div className="flex items-baseline gap-1 mb-4 h-12">
+            {planType === 'monthly' ? (
+               <>
+                 <span className="text-3xl font-extrabold text-gray-900">¥2,980</span>
+                 <span className="text-gray-500 font-medium">/月</span>
+               </>
+            ) : (
+               <div className="flex flex-col">
+                  <span className="text-sm text-gray-400 line-through">¥35,760</span>
+                  <div>
+                    <span className="text-3xl font-extrabold text-gray-900">¥28,600</span>
+                    <span className="text-gray-500 font-medium">/年</span>
+                  </div>
+               </div>
+            )}
           </div>
           <ul className="space-y-3 mb-6">
             {[

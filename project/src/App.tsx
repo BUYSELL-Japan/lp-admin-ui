@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Eye, Edit } from 'lucide-react';
 import Preview from './components/Preview';
 import Editor from './components/Editor';
-import PaymentWall from './components/PaymentWall';
 import Dashboard from './components/Dashboard';
+import PaymentWall from './components/PaymentWall';
 import { LanguageProvider } from './contexts/LanguageContext';
 import {
   exchangeCodeForTokens,
@@ -36,12 +36,13 @@ import {
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'preview'>('dashboard');
+  const [planName, setPlanName] = useState<string | null>(null);
+  const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [showDashboard, setShowDashboard] = useState(true);
   const [sectionData, setSectionData] = useState({
     header: headerData,
     hero: heroData,
@@ -145,6 +146,8 @@ function App() {
           const storeInfo = await getStoreInfo(userId);
           setSubdomain(storeInfo.subdomain);
           setSubscriptionStatus(storeInfo.subscriptionStatus);
+          setPlanName(storeInfo.planName || null);
+          setTrialEnd(storeInfo.trialEnd || null);
         } catch (error) {
           console.error('Error checking store info', error);
         }
@@ -257,22 +260,38 @@ function App() {
   };
 
   const handlePreviewToggle = async () => {
-    if (!showPreview && userId && !subdomain) {
+    if (activeTab !== 'preview' && userId && !subdomain) {
       const fetchedSubdomain = await getSubdomain(userId);
       setSubdomain(fetchedSubdomain);
     }
-    setShowPreview(!showPreview);
+    setActiveTab(activeTab === 'preview' ? 'editor' : 'preview');
+  };
+
+  const handleEditorToggle = () => {
+    setActiveTab('editor');
+  };
+
+  const handleDashboardToggle = () => {
+    setActiveTab('dashboard');
   };
 
   return (
     <LanguageProvider>
       <div className="min-h-screen bg-gray-100">
-        <div className="md:hidden fixed bottom-4 right-4 z-50">
+        <div className="md:hidden fixed bottom-4 right-4 z-50 flex gap-2">
+          {activeTab !== 'dashboard' && (
+            <button
+              onClick={handleDashboardToggle}
+              className="px-4 py-3 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-900 flex items-center gap-2"
+            >
+              <span>ダッシュボード</span>
+            </button>
+          )}
           <button
             onClick={handlePreviewToggle}
             className="px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center gap-2"
           >
-            {showPreview ? (
+            {activeTab === 'preview' ? (
               <>
                 <Edit size={20} />
                 <span>編集</span>
@@ -287,34 +306,65 @@ function App() {
         </div>
 
         <div className="flex h-screen">
-          <div className={`flex-1 ${showPreview ? 'block' : 'hidden'} md:block`}>
+          {/* 左側のプレビュー画面、エディタータブまたはダッシュボードタブの場合はPC環境のみ表示される */}
+          <div className={`flex-1 ${activeTab === 'preview' ? 'block' : 'hidden'} md:block transition-all`}>
             <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
           </div>
-          <div className={`w-full md:w-[500px] ${showPreview ? 'hidden' : 'block'} md:block bg-white overflow-y-auto`}>
-            {userId && isCheckingSubscription ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p>契約状況を確認しています...</p>
+          
+          {/* 右側の操作パネル（ダッシュボードまたはエディター） */}
+          <div className={`w-full md:w-[500px] ${activeTab === 'preview' ? 'hidden' : 'block'} bg-white overflow-y-auto flex flex-col`}>
+             {/* タブナビゲーション */}
+             {userId && subscriptionStatus === 'active' && (
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'dashboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  ダッシュボード
+                </button>
+                <button
+                  onClick={() => setActiveTab('editor')}
+                  className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'editor' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  エディター
+                </button>
               </div>
-            ) : userId && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' ? (
-              <PaymentWall storeId={userId} />
-            ) : userId && showDashboard ? (
-              <Dashboard
-                storeId={userId}
-                subscriptionStatus={subscriptionStatus}
-                onOpenEditor={() => setShowDashboard(false)}
-              />
-            ) : (
-              <Editor
-                userId={userId}
-                sectionData={sectionData}
-                onSectionChange={handleSectionChange}
-                isAuthenticated={!!userId}
-                isAuthenticating={isAuthenticating}
-                onSubdomainFetched={handleSubdomainFetched}
-                onBackToDashboard={() => setShowDashboard(true)}
-              />
             )}
+
+            {/* コンテンツエリア */}
+            <div className="flex-1 overflow-y-auto">
+              {userId && isCheckingSubscription ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p>契約状況を確認しています...</p>
+                </div>
+              ) : userId && subscriptionStatus !== 'active' ? (
+                <PaymentWall storeId={userId} />
+              ) : activeTab === 'dashboard' ? (
+                <Dashboard 
+                  storeId={userId!} 
+                  subdomain={subdomain} 
+                  subscriptionStatus={subscriptionStatus}
+                  planName={planName || undefined}
+                  trialEnd={trialEnd}
+                  onOpenEditor={handleEditorToggle}
+                  onOpenPreview={handlePreviewToggle}
+                />
+              ) : (
+                <Editor
+                  userId={userId}
+                  sectionData={sectionData}
+                  onSectionChange={handleSectionChange}
+                  isAuthenticated={!!userId}
+                  isAuthenticating={isAuthenticating}
+                  onSubdomainFetched={handleSubdomainFetched}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
