@@ -142,7 +142,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   }
 }
 
-export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null, planName?: string | null, trialEnd?: string | null }> {
+export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null, planName?: string | null, trialEnd?: string | null, templateId?: string | null }> {
   try {
     const response = await fetch(`${SETTINGS_ENDPOINT}/${storeId}`, {
       method: 'GET',
@@ -164,11 +164,31 @@ export async function getStoreInfo(storeId: string): Promise<{ subdomain: string
       subdomain: result.subdomain || result.Subdomain || null,
       subscriptionStatus: result.subscription_status || result.subscriptionStatus || null,
       planName: result.plan_name || result.planName || null,
-      trialEnd: result.trial_end || result.trialEnd || null
+      trialEnd: result.trial_end || result.trialEnd || null,
+      templateId: result.templateId || result.template_id || 'theme1',
     };
   } catch (error) {
     console.error('Error fetching store info:', error);
-    return { subdomain: null, subscriptionStatus: null, planName: null, trialEnd: null };
+    return { subdomain: null, subscriptionStatus: null, planName: null, trialEnd: null, templateId: 'theme1' };
+  }
+}
+
+export async function saveTemplateId(storeId: string, templateId: string): Promise<boolean> {
+  try {
+    const response = await fetch(SETTINGS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeId, templateId }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error('Failed to save templateId');
+    }
+    return true;
+  } catch (error) {
+    console.error('Error saving templateId:', error);
+    return false;
   }
 }
 

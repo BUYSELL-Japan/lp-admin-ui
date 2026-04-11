@@ -7,6 +7,8 @@ interface DashboardProps {
   subscriptionStatus: string | null;
   planName?: string;
   trialEnd?: string | null;
+  templateId?: string;
+  onTemplateChange?: (newTheme: string) => void;
   onOpenEditor: () => void;
   onOpenPreview: () => void;
 }
@@ -17,6 +19,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   subscriptionStatus,
   planName = 'プレミアムプラン',
   trialEnd,
+  templateId = 'theme1',
+  onTemplateChange,
   onOpenEditor,
   onOpenPreview,
 }) => {
@@ -141,6 +145,43 @@ const Dashboard: React.FC<DashboardProps> = ({
               Customer Portal を開く
             </button>
           </div>
+        </div>
+
+        {/* テンプレート */}
+        <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">テンプレート</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <p className="text-sm text-gray-600 mb-5">公開LPのデザインテンプレートを変更します。変更後は次回ビルド時に反映されます。</p>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: 'theme1', name: 'Standard', color: '#0d9488', desc: '清潔感・万能' },
+              { id: 'theme2', name: 'Modern', color: '#3b82f6', desc: 'ダーク・高級感' },
+              { id: 'theme3', name: 'Elegant', color: '#b45309', desc: '和風・エレガント' },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => onTemplateChange && onTemplateChange(t.id)}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-left ${
+                  templateId === t.id
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {templateId === t.id && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6 9 17l-5-5"/></svg>
+                  </span>
+                )}
+                <div className="w-10 h-10 rounded-full" style={{ background: t.color }} />
+                <span className="font-bold text-sm text-gray-800">{t.name}</span>
+                <span className="text-xs text-gray-500">{t.desc}</span>
+              </button>
+            ))}
+          </div>
+          {templateId && (
+            <p className="mt-4 text-xs text-gray-400 text-center">
+              現在選択中: <strong className="text-gray-700">{templateId === 'theme1' ? 'Standard' : templateId === 'theme2' ? 'Modern' : 'Elegant'}</strong>
+            </p>
+          )}
         </div>
 
         {/* クイックアクション */}

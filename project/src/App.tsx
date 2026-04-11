@@ -13,7 +13,7 @@ import {
   getStoredStoreId,
   clearAuthData,
 } from './services/auth';
-import { getSubdomain, getSectionData, getStoreInfo } from './services/api';
+import { getSubdomain, getSectionData, getStoreInfo, saveTemplateId } from './services/api';
 import {
   headerData,
   heroData,
@@ -43,6 +43,7 @@ function App() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<string>('theme1');
   const [sectionData, setSectionData] = useState({
     header: headerData,
     hero: heroData,
@@ -148,6 +149,7 @@ function App() {
           setSubscriptionStatus(storeInfo.subscriptionStatus);
           setPlanName(storeInfo.planName || null);
           setTrialEnd(storeInfo.trialEnd || null);
+          setTemplateId(storeInfo.templateId || 'theme1');
         } catch (error) {
           console.error('Error checking store info', error);
         }
@@ -351,6 +353,13 @@ function App() {
                   subscriptionStatus={subscriptionStatus}
                   planName={planName || undefined}
                   trialEnd={trialEnd}
+                  templateId={templateId}
+                  onTemplateChange={async (newTheme: string) => {
+                    if (userId) {
+                      const ok = await saveTemplateId(userId, newTheme);
+                      if (ok) setTemplateId(newTheme);
+                    }
+                  }}
                   onOpenEditor={handleEditorToggle}
                   onOpenPreview={handlePreviewToggle}
                 />
