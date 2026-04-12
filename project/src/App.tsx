@@ -67,12 +67,29 @@ function App() {
   useEffect(() => {
     const handleAuth = async () => {
       const code = getCodeFromUrl();
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('session_id');
+
       console.log('=== DEBUG: Auth Started ===');
       console.log('Code from URL:', code);
+      console.log('Session ID from URL:', sessionId);
       console.log('Current URL:', window.location.href);
       console.log('Stored store_id:', getStoredStoreId());
       console.log('Stored id_token exists:', !!localStorage.getItem('id_token'));
       console.log('==========================');
+
+      // Stripe決済直後 (session_idがある) の場合は、カスタム属性(store_id)が最新化されているため、
+      // 既存の古いトークンを破棄して、Cognitoから新しいトークンを取り直す必要があります。
+      if (sessionId && !code) {
+        console.log('DEBUG: Returned from Stripe Checkout. Forcing fresh login to update store_id in token...');
+        clearAuthData();
+        
+        // CognitoのログインURLへリダイレクトして新しいトークンを要求
+        // ※Googleにログイン済みなら画面は出ずに一瞬でリダイレクトして戻ってきます
+        const COGNITO_AUTHORIZE_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
+        window.location.href = COGNITO_AUTHORIZE_URL;
+        return;
+      }
 
       if (code) {
         console.log('DEBUG: Code detected, removing from URL');
