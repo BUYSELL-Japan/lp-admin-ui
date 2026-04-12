@@ -363,7 +363,16 @@ function App() {
                 </div>
               ) : userId && subscriptionStatus !== 'active' ? (
                 <PaymentWall storeId={userId} />
-              ) : activeTab === 'dashboard' ? (
+              ) : !userId || activeTab === 'editor' ? (
+                <Editor
+                  userId={userId}
+                  sectionData={sectionData}
+                  onSectionChange={handleSectionChange}
+                  isAuthenticated={!!userId}
+                  isAuthenticating={isAuthenticating}
+                  onSubdomainFetched={handleSubdomainFetched}
+                />
+              ) : (
                 <Dashboard 
                   storeId={userId!} 
                   subdomain={subdomain} 
@@ -379,15 +388,6 @@ function App() {
                   }}
                   onOpenEditor={handleEditorToggle}
                   onOpenPreview={handlePreviewToggle}
-                />
-              ) : (
-                <Editor
-                  userId={userId}
-                  sectionData={sectionData}
-                  onSectionChange={handleSectionChange}
-                  isAuthenticated={!!userId}
-                  isAuthenticating={isAuthenticating}
-                  onSubdomainFetched={handleSubdomainFetched}
                 />
               )}
             </div>
