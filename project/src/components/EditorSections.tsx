@@ -591,16 +591,27 @@ export function NewsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">カテゴリ</label>
-              <input
-                type="text"
-                value={item.category}
+              <select
+                value={
+                  typeof item.category === 'object'
+                    ? (item.category?.ja ?? item.category?.en ?? '')
+                    : (item.category ?? '')
+                }
                 onChange={(e) => {
                   const newItems = [...newsData.items];
                   newItems[index] = { ...item, category: e.target.value };
                   onUpdate({ items: newItems });
                 }}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
+              >
+                <option value="お知らせ">お知らせ</option>
+                <option value="営業情報">営業情報</option>
+                <option value="新メニュー">新メニュー</option>
+                <option value="イベント">イベント</option>
+                <option value="キャンペーン">キャンペーン</option>
+                <option value="スタッフ">スタッフ</option>
+                <option value="メディア">メディア</option>
+              </select>
             </div>
           </div>
           <div>
