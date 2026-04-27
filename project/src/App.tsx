@@ -167,6 +167,16 @@ function App() {
           const justPaid = localStorage.getItem('stripe_just_paid') === '1';
 
           let storeInfo = await getStoreInfo(userId);
+
+          // ★ 安全網: storeIdがDynamoDBに存在しない（古いlocalStorageの場合）は強制再ログイン
+          if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
+            console.warn('Store not found in DynamoDB for userId:', userId, '- forcing re-login');
+            clearAuthData();
+            const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
+            window.location.href = COGNITO_URL;
+            return;
+          }
+
           setSubdomain(storeInfo.subdomain);
           setPlanName(storeInfo.planName || null);
           setTrialEnd(storeInfo.trialEnd || null);
