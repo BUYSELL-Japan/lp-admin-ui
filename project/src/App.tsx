@@ -168,13 +168,21 @@ function App() {
 
           let storeInfo = await getStoreInfo(userId);
 
-          // ★ 安全網: storeIdがDynamoDBに存在しない（古いlocalStorageの場合）は強制再ログイン
+          // ★ 安全網: APIエラーで両方nullの場合は1回だけリトライして確認する
+          // （APIが一時的に落ちている場合は再ログインではなくリトライする）
           if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
-            console.warn('Store not found in DynamoDB for userId:', userId, '- forcing re-login');
-            clearAuthData();
-            const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
-            window.location.href = COGNITO_URL;
-            return;
+            console.warn('Store info returned empty, retrying once before any action...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            storeInfo = await getStoreInfo(userId);
+
+            // リトライ後もどちらも取れない場合のみ、本当に存在しないと判断して再ログイン
+            if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
+              console.warn('Store not found in DynamoDB for userId:', userId, '- forcing re-login');
+              clearAuthData();
+              const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
+              window.location.href = COGNITO_URL;
+              return;
+            }
           }
 
           setSubdomain(storeInfo.subdomain);
@@ -198,107 +206,112 @@ function App() {
               localStorage.removeItem('stripe_just_paid');
             } else {
               console.warn('⚠️ Subscription still not active after 30s polling.');
+              // ポーリング上限に達してもフラグを削除してループを防ぐ
+              localStorage.removeItem('stripe_just_paid');
             }
           } else if (justPaid && storeInfo.subscriptionStatus === 'active') {
             // 既にactiveなら即座にフラグ削除
             localStorage.removeItem('stripe_just_paid');
           }
 
+          // ★ subscriptionStatus確定後にsection dataを読み込む（tryブロック内に移動）
           setSubscriptionStatus(storeInfo.subscriptionStatus);
-        } catch (error) {
-          console.error('Error checking store info', error);
-        }
 
-        console.log('=== Loading Section Data ===');
-        console.log('User ID:', userId);
-        const savedData = await getSectionData(userId);
-        console.log('Saved data received:', savedData);
-        if (savedData) {
-          console.log('Saved data keys:', Object.keys(savedData));
-          console.log('Saved data hero sample:', savedData.hero);
-          console.log('=== Checking problematic sections ===');
-          console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
-          console.log('staff:', JSON.stringify(savedData.staff, null, 2));
-          console.log('reviews:', JSON.stringify(savedData.reviews, null, 2));
-          console.log('company:', JSON.stringify(savedData.company, null, 2));
-          console.log('access:', JSON.stringify(savedData.access, null, 2));
-          console.log('=====================================');
-          console.log('Merging saved data with default data');
-          setSectionData((prev) => {
-            const merged = { ...prev };
+          console.log('=== Loading Section Data ===');
+          console.log('User ID:', userId);
+          const savedData = await getSectionData(userId);
+          console.log('Saved data received:', savedData);
+          if (savedData) {
+            console.log('Saved data keys:', Object.keys(savedData));
+            console.log('Saved data hero sample:', savedData.hero);
+            console.log('=== Checking problematic sections ===');
+            console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
+            console.log('staff:', JSON.stringify(savedData.staff, null, 2));
+            console.log('reviews:', JSON.stringify(savedData.reviews, null, 2));
+            console.log('company:', JSON.stringify(savedData.company, null, 2));
+            console.log('access:', JSON.stringify(savedData.access, null, 2));
+            console.log('=====================================');
+            console.log('Merging saved data with default data');
+            setSectionData((prev) => {
+              const merged = { ...prev };
 
-            Object.keys(savedData).forEach(key => {
-              if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
-                console.log(`  Merging section: ${key}`);
-                console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
-                console.log(`    Default keys:`, prev[key] ? Object.keys(prev[key]).join(', ') : 'none');
+              Object.keys(savedData).forEach(key => {
+                if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
+                  console.log(`  Merging section: ${key}`);
+                  console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
+                  console.log(`    Default keys:`, prev[key] ? Object.keys(prev[key]).join(', ') : 'none');
 
-                if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
-                  const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
-                  const titles = ['所在地', '営業時間', '電話番号', 'メール'];
+                  if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
+                    const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
+                    const titles = ['所在地', '営業時間', '電話番号', 'メール'];
 
-                  const convertedItems = savedData[key].items.map((item: any, index: number) => {
-                    let content = '';
-                    if (typeof item === 'string') {
-                      content = item;
-                    } else if (typeof item === 'object') {
-                      if (item.ja) {
-                        content = item.ja;
-                      } else if (item.content) {
-                        content = typeof item.content === 'string' ? item.content : item.content.ja || '';
-                      } else {
-                        const values = Object.values(item);
-                        content = values.length > 0 ? String(values[0]) : '';
+                    const convertedItems = savedData[key].items.map((item: any, index: number) => {
+                      let content = '';
+                      if (typeof item === 'string') {
+                        content = item;
+                      } else if (typeof item === 'object') {
+                        if (item.ja) {
+                          content = item.ja;
+                        } else if (item.content) {
+                          content = typeof item.content === 'string' ? item.content : item.content.ja || '';
+                        } else {
+                          const values = Object.values(item);
+                          content = values.length > 0 ? String(values[0]) : '';
+                        }
                       }
-                    }
 
-                    return {
-                      icon: item.icon || icons[index] || 'MapPin',
-                      title: item.title || titles[index] || '',
-                      content: content
+                      return {
+                        icon: item.icon || icons[index] || 'MapPin',
+                        title: item.title || titles[index] || '',
+                        content: content
+                      };
+                    });
+
+                    merged[key] = {
+                      ...prev[key],
+                      ...savedData[key],
+                      items: convertedItems
                     };
-                  });
-
-                  merged[key] = {
-                    ...prev[key],
-                    ...savedData[key],
-                    items: convertedItems
-                  };
-                  console.log(`    Converted storeInfo items:`, convertedItems);
+                    console.log(`    Converted storeInfo items:`, convertedItems);
+                  } else {
+                    merged[key] = {
+                      ...prev[key],
+                      ...savedData[key],
+                    };
+                  }
+                  console.log(`    Merged keys:`, Object.keys(merged[key]).join(', '));
                 } else {
-                  merged[key] = {
-                    ...prev[key],
-                    ...savedData[key],
-                  };
+                  console.log(`  Skipping empty or invalid section: ${key}`);
                 }
-                console.log(`    Merged keys:`, Object.keys(merged[key]).join(', '));
-              } else {
-                console.log(`  Skipping empty or invalid section: ${key}`);
-              }
-            });
+              });
 
-            console.log('Merged data keys:', Object.keys(merged));
-            console.log('Merged hero sample:', JSON.stringify(merged.hero, null, 2).substring(0, 300));
-            console.log('Merged storeInfo sample:', JSON.stringify(merged.storeInfo, null, 2).substring(0, 300));
-            console.log('Merged company sample:', JSON.stringify(merged.company, null, 2).substring(0, 300));
-            console.log('=== After Deep Merge ===');
-            console.log('hero exists:', merged.hero ? 'Yes' : 'No');
-            console.log('hero.title:', merged.hero?.title || 'Missing');
-            console.log('storeInfo exists:', merged.storeInfo ? 'Yes' : 'No');
-            console.log('storeInfo.items:', merged.storeInfo?.items?.length || 'Missing');
-            console.log('company exists:', merged.company ? 'Yes' : 'No');
-            console.log('company.philosophy:', merged.company?.philosophy ? 'Yes' : 'No');
-            console.log('pricing plans exists:', merged.pricing?.plans ? 'Yes' : 'No');
-            console.log('staff members exists:', merged.staff?.members ? 'Yes' : 'No');
-            console.log('reviews reviews exists:', merged.reviews?.reviews ? 'Yes' : 'No');
-            console.log('========================');
-            return merged;
-          });
-        } else {
-          console.log('No saved data found, using default data');
+              console.log('Merged data keys:', Object.keys(merged));
+              console.log('Merged hero sample:', JSON.stringify(merged.hero, null, 2).substring(0, 300));
+              console.log('Merged storeInfo sample:', JSON.stringify(merged.storeInfo, null, 2).substring(0, 300));
+              console.log('Merged company sample:', JSON.stringify(merged.company, null, 2).substring(0, 300));
+              console.log('=== After Deep Merge ===');
+              console.log('hero exists:', merged.hero ? 'Yes' : 'No');
+              console.log('hero.title:', merged.hero?.title || 'Missing');
+              console.log('storeInfo exists:', merged.storeInfo ? 'Yes' : 'No');
+              console.log('storeInfo.items:', merged.storeInfo?.items?.length || 'Missing');
+              console.log('company exists:', merged.company ? 'Yes' : 'No');
+              console.log('company.philosophy:', merged.company?.philosophy ? 'Yes' : 'No');
+              console.log('pricing plans exists:', merged.pricing?.plans ? 'Yes' : 'No');
+              console.log('staff members exists:', merged.staff?.members ? 'Yes' : 'No');
+              console.log('reviews reviews exists:', merged.reviews?.reviews ? 'Yes' : 'No');
+              console.log('========================');
+              return merged;
+            });
+          } else {
+            console.log('No saved data found, using default data');
+          }
+          console.log('===========================');
+        } catch (error) {
+          console.error('Error loading store data:', error);
+        } finally {
+          // ★ 成功・失敗どちらでも必ずスピナーを解除する
+          setIsCheckingSubscription(false);
         }
-        console.log('===========================');
-        setIsCheckingSubscription(false);
       }
     };
 
