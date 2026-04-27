@@ -142,7 +142,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   }
 }
 
-export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null, planName?: string | null, trialEnd?: string | null, templateId?: string | null }> {
+export async function getStoreInfo(storeId: string): Promise<{ subdomain: string | null, subscriptionStatus: string | null, planName?: string | null, trialEnd?: string | null, templateId?: string | null, notFound?: boolean }> {
   try {
     const response = await fetch(`${SETTINGS_ENDPOINT}/${storeId}`, {
       method: 'GET',
@@ -154,6 +154,11 @@ export async function getStoreInfo(storeId: string): Promise<{ subdomain: string
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error:', errorText);
+      // ★ 404の場合は「ストア未登録」として剰別する
+      if (response.status === 404) {
+        console.warn('Store not found in DynamoDB (404). Showing PaymentWall.');
+        return { subdomain: null, subscriptionStatus: null, notFound: true };
+      }
       throw new Error('Failed to fetch store info');
     }
 

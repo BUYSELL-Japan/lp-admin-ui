@@ -176,20 +176,30 @@ function App() {
 
           let storeInfo = await getStoreInfo(userId);
 
-          // ★ 安全網: APIエラーで両方nullの場合は1回だけリトライして確認する
+          // ★ 404: ストアがDynamoDBに未登録 → PaymentWallを表示（リダイレクトしない！）
+          if (storeInfo.notFound) {
+            console.warn('Store not registered yet. Showing PaymentWall.');
+            if (isMounted) {
+              setSubscriptionStatus(null);
+            }
+            return;
+          }
+
+          // ★ ネットワークエラーなどで両方nullの場合は1回リトライ
           if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
-            console.warn('Store info returned empty, retrying once...');
+            console.warn('Store info returned empty (network error?), retrying once...');
             await new Promise(resolve => setTimeout(resolve, 2000));
             storeInfo = await getStoreInfo(userId);
 
-            // リトライ後もどちらも取れない場合のみ再ログイン（ループ防止のため再ログインは最終手段）
+            if (storeInfo.notFound) {
+              console.warn('Store not registered after retry. Showing PaymentWall.');
+              if (isMounted) setSubscriptionStatus(null);
+              return;
+            }
+
             if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
-              console.warn('Store not found in DynamoDB for userId:', userId);
-              if (isMounted) {
-                clearAuthData();
-                const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
-                window.location.href = COGNITO_URL;
-              }
+              console.warn('Still empty after retry. Possible network issue, showing PaymentWall.');
+              if (isMounted) setSubscriptionStatus(null);
               return;
             }
           }
