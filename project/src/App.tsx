@@ -41,7 +41,8 @@ function App() {
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+  // ★ 初期値をtrueにしてuserId設定直後にPaymentWallがちらつくのを防ぐ
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string>('theme1');
   const [sectionData, setSectionData] = useState({
@@ -159,32 +160,41 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // userId未設定時はスピナーを解除
+    if (!userId) {
+      setIsCheckingSubscription(false);
+      return;
+    }
+
+    let isMounted = true; // アンマウント後の状態更新を防ぐ
+
     const loadSectionData = async () => {
-      if (userId) {
-        setIsCheckingSubscription(true);
-        try {
+      setIsCheckingSubscription(true);
+      try {
           // ★ Stripe決済直後フラグを確認
           const justPaid = localStorage.getItem('stripe_just_paid') === '1';
 
           let storeInfo = await getStoreInfo(userId);
 
           // ★ 安全網: APIエラーで両方nullの場合は1回だけリトライして確認する
-          // （APIが一時的に落ちている場合は再ログインではなくリトライする）
           if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
-            console.warn('Store info returned empty, retrying once before any action...');
+            console.warn('Store info returned empty, retrying once...');
             await new Promise(resolve => setTimeout(resolve, 2000));
             storeInfo = await getStoreInfo(userId);
 
-            // リトライ後もどちらも取れない場合のみ、本当に存在しないと判断して再ログイン
+            // リトライ後もどちらも取れない場合のみ再ログイン（ループ防止のため再ログインは最終手段）
             if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
-              console.warn('Store not found in DynamoDB for userId:', userId, '- forcing re-login');
-              clearAuthData();
-              const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
-              window.location.href = COGNITO_URL;
+              console.warn('Store not found in DynamoDB for userId:', userId);
+              if (isMounted) {
+                clearAuthData();
+                const COGNITO_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
+                window.location.href = COGNITO_URL;
+              }
               return;
             }
           }
 
+          if (!isMounted) return;
           setSubdomain(storeInfo.subdomain);
           setPlanName(storeInfo.planName || null);
           setTrialEnd(storeInfo.trialEnd || null);
@@ -214,7 +224,8 @@ function App() {
             localStorage.removeItem('stripe_just_paid');
           }
 
-          // ★ subscriptionStatus確定後にsection dataを読み込む（tryブロック内に移動）
+          // ★ subscriptionStatus確定後にsection dataを読み込む
+          if (!isMounted) return;
           setSubscriptionStatus(storeInfo.subscriptionStatus);
 
           console.log('=== Loading Section Data ===');
@@ -310,12 +321,15 @@ function App() {
           console.error('Error loading store data:', error);
         } finally {
           // ★ 成功・失敗どちらでも必ずスピナーを解除する
-          setIsCheckingSubscription(false);
+          if (isMounted) setIsCheckingSubscription(false);
         }
-      }
     };
 
     loadSectionData();
+
+    return () => {
+      isMounted = false; // クリーンアップ：アンマウント時にフラグをfalseにする
+    };
   }, [userId]);
 
   const handleSectionChange = (section: string, data: any) => {
