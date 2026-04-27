@@ -81,7 +81,9 @@ function App() {
       // Stripe決済直後 (session_idがある) の場合は、カスタム属性(store_id)が最新化されているため、
       // 既存の古いトークンを破棄して、Cognitoから新しいトークンを取り直す必要があります。
       if (sessionId && !code) {
-        console.log('DEBUG: Returned from Stripe Checkout. Forcing fresh login to update store_id in token...');
+        console.log('DEBUG: Returned from Stripe Checkout. Saving session_id and forcing fresh login...');
+        // ★ Cognitoリダイレクト後も「決済直後」とわかるようにフラグを保存
+        localStorage.setItem('stripe_just_paid', '1');
         clearAuthData();
         
         // CognitoのログインURLへリダイレクトして新しいトークンを要求
@@ -161,12 +163,38 @@ function App() {
       if (userId) {
         setIsCheckingSubscription(true);
         try {
-          const storeInfo = await getStoreInfo(userId);
+          // ★ Stripe決済直後フラグを確認
+          const justPaid = localStorage.getItem('stripe_just_paid') === '1';
+
+          let storeInfo = await getStoreInfo(userId);
           setSubdomain(storeInfo.subdomain);
-          setSubscriptionStatus(storeInfo.subscriptionStatus);
           setPlanName(storeInfo.planName || null);
           setTrialEnd(storeInfo.trialEnd || null);
           setTemplateId(storeInfo.templateId || 'theme1');
+
+          // ★ 決済直後にWebhookがまだ届いていない場合のリトライポーリング
+          if (justPaid && storeInfo.subscriptionStatus !== 'active') {
+            console.log('Stripe just paid flag detected. Polling for subscription activation...');
+            let retries = 0;
+            const maxRetries = 10; // 最大10回 = 30秒
+            while (retries < maxRetries && storeInfo.subscriptionStatus !== 'active') {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              console.log(`Polling attempt ${retries + 1}/${maxRetries}...`);
+              storeInfo = await getStoreInfo(userId);
+              retries++;
+            }
+            if (storeInfo.subscriptionStatus === 'active') {
+              console.log('✅ Subscription confirmed active after polling!');
+              localStorage.removeItem('stripe_just_paid');
+            } else {
+              console.warn('⚠️ Subscription still not active after 30s polling.');
+            }
+          } else if (justPaid && storeInfo.subscriptionStatus === 'active') {
+            // 既にactiveなら即座にフラグ削除
+            localStorage.removeItem('stripe_just_paid');
+          }
+
+          setSubscriptionStatus(storeInfo.subscriptionStatus);
         } catch (error) {
           console.error('Error checking store info', error);
         }
