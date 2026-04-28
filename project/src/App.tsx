@@ -12,6 +12,7 @@ import {
   storeAuthData,
   getStoredStoreId,
   clearAuthData,
+  decodeJWT,
 } from './services/auth';
 import { getSubdomain, getSectionData, getStoreInfo, saveTemplateId } from './services/api';
 import {
@@ -119,14 +120,35 @@ function App() {
         try {
           const tokens = await exchangeCodeForTokens(code);
           console.log('DEBUG: Token exchange successful');
-          const storeId = getStoreIdFromToken(tokens.id_token);
+          let storeId = getStoreIdFromToken(tokens.id_token);
+
+          if (!storeId) {
+            console.log('DEBUG: custom:store_id not found in token. Fetching by sub...');
+            try {
+              const decoded = decodeJWT(tokens.id_token);
+              if (decoded.sub) {
+                const checkResponse = await fetch('https://9xylwit7o5.execute-api.ap-southeast-2.amazonaws.com/prod/check-store', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ cognito_sub: decoded.sub })
+                });
+                const storeData = await checkResponse.json();
+                if (storeData.found && storeData.storeId) {
+                  storeId = storeData.storeId;
+                  console.log('DEBUG: Fetched storeId from check-store API:', storeId);
+                }
+              }
+            } catch (err) {
+              console.error('Error fetching store_id by sub:', err);
+            }
+          }
 
           if (storeId) {
             console.log('DEBUG: Store ID found:', storeId);
             storeAuthData(tokens, storeId);
             setUserId(storeId);
           } else {
-            console.error('Unable to get store_id from token');
+            console.error('Unable to get store_id from token or API');
             clearAuthData();
           }
         } catch (error) {

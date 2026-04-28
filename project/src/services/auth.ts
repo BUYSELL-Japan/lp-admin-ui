@@ -31,7 +31,7 @@ function base64UrlDecode(str: string): string {
   );
 }
 
-function decodeJWT(token: string): DecodedToken {
+export function decodeJWT(token: string): DecodedToken {
   const parts = token.split('.');
   if (parts.length !== 3) {
     throw new Error('Invalid JWT token');
