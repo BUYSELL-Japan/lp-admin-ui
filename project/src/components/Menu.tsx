@@ -5,7 +5,7 @@ import Lightbox from './Lightbox';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getText } from '../utils/i18n';
 
-function MenuItem({ item, index, onImageClick, lang }: { item: MenuItemType; index: number; onImageClick: () => void; lang: string }) {
+function MenuItem({ item, index, onImageClick, lang }: { item: MenuItemType; index: number; onImageClick: () => void; lang: any }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
