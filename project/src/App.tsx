@@ -120,27 +120,31 @@ function App() {
         try {
           const tokens = await exchangeCodeForTokens(code);
           console.log('DEBUG: Token exchange successful');
-          let storeId = getStoreIdFromToken(tokens.id_token);
+          let storeId = null;
 
-          if (!storeId) {
-            console.log('DEBUG: custom:store_id not found in token. Fetching by sub...');
-            try {
-              const decoded = decodeJWT(tokens.id_token);
-              if (decoded.sub) {
-                const checkResponse = await fetch('https://9xylwit7o5.execute-api.ap-southeast-2.amazonaws.com/prod/check-store', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ cognito_sub: decoded.sub })
-                });
-                const storeData = await checkResponse.json();
-                if (storeData.found && storeData.storeId) {
-                  storeId = storeData.storeId;
-                  console.log('DEBUG: Fetched storeId from check-store API:', storeId);
-                }
+          try {
+            const decoded = decodeJWT(tokens.id_token);
+            if (decoded.sub) {
+              console.log('DEBUG: Always fetching storeId by sub to bypass outdated tokens...');
+              const checkResponse = await fetch('https://9xylwit7o5.execute-api.ap-southeast-2.amazonaws.com/prod/check-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cognito_sub: decoded.sub })
+              });
+              const storeData = await checkResponse.json();
+              if (storeData.found && storeData.storeId) {
+                storeId = storeData.storeId;
+                console.log('DEBUG: Fetched correct storeId from check-store API:', storeId);
               }
-            } catch (err) {
-              console.error('Error fetching store_id by sub:', err);
             }
+          } catch (err) {
+            console.error('Error fetching store_id by sub:', err);
+          }
+
+          // フォールバック: DBから取得できなかった場合はトークンの属性を使う
+          if (!storeId) {
+            storeId = getStoreIdFromToken(tokens.id_token);
+            console.log('DEBUG: Using custom:store_id as fallback:', storeId);
           }
 
           if (storeId) {
