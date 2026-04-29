@@ -1633,8 +1633,9 @@ export async function translateAndSave(
     console.log('Valid sections:', sections.join(', '));
     console.log('All sections will be processed one by one to avoid API Gateway timeout');
 
-    // まずオリジナルの日本語データをベースにコピー（有効なセクションのみ）
-    for (const sectionName of sections) {
+    // まずオリジナルの日本語データをベースにコピー（すべてのセクションを保持）
+    for (const sectionName in allSectionData) {
+      // 翻訳対象かどうかに関わらず、まずはすべてのオリジナルデータをコピー
       mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
     }
 
