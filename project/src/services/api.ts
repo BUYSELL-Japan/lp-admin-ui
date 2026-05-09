@@ -60,9 +60,103 @@ export async function saveSiteData(userId: string, data: Partial<SiteData>): Pro
   }
 }
 
+async function getRawSectionData(storeId: string): Promise<any | null> {
+  try {
+    const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    let contentData = null;
+
+    if (result.ContentData) {
+      contentData = result.ContentData;
+      if (contentData.Status) delete contentData.Status;
+    } else if (result.content) {
+      contentData = result.content;
+    } else if (result.Content) {
+      contentData = result.Content;
+    } else if (result.hero || result.about || result.menu) {
+      contentData = result;
+    }
+    if (!contentData) return null;
+
+    const normalizedData: any = {};
+    for (const sectionKey in contentData) {
+      const section = contentData[sectionKey];
+      if (!section || typeof section !== 'object') continue;
+      let extractedData = null;
+      if (section.translatedData && typeof section.translatedData === 'object') {
+        extractedData = section.translatedData[sectionKey] ? section.translatedData[sectionKey] : section.translatedData;
+      } else {
+        extractedData = section;
+      }
+      normalizedData[sectionKey] = extractedData;
+    }
+    return normalizedData;
+  } catch (error) {
+    return null;
+  }
+}
+
+function mergeMultilingualData(newData: any, existingData: any): any {
+  if (newData === null || newData === undefined) return newData;
+  if (!existingData || typeof existingData !== 'object') return newData;
+
+  const existingKeys = Object.keys(existingData);
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const isExistingMultilingual = existingKeys.length > 0 && languageKeys.some(k => existingKeys.includes(k));
+
+  if (isExistingMultilingual && typeof newData === 'string') {
+    return {
+      ...existingData,
+      ja: newData // 日本語だけを上書きし、他言語は保持
+    };
+  }
+
+  if (typeof newData !== 'object') return newData;
+
+  const isNewMultilingual = Object.keys(newData).some(k => languageKeys.includes(k));
+  if (isNewMultilingual && isExistingMultilingual) {
+    return {
+      ...existingData,
+      ...newData,
+      ja: newData.ja !== undefined ? newData.ja : existingData.ja
+    };
+  }
+
+  if (Array.isArray(newData)) {
+    if (!Array.isArray(existingData)) return newData;
+    return newData.map((item, index) => {
+      if (index < existingData.length) {
+        return mergeMultilingualData(item, existingData[index]);
+      }
+      return item;
+    });
+  }
+
+  const result: any = { ...newData };
+  for (const key in newData) {
+    if (existingData[key] !== undefined) {
+      result[key] = mergeMultilingualData(newData[key], existingData[key]);
+    }
+  }
+  return result;
+}
+
 export async function saveSection(userId: string, section: string, data: any): Promise<boolean> {
   try {
-    const normalizedData = normalizeDataStructure(data, section);
+    console.log(`=== Saving section ${section} (with multilingual merge) ===`);
+    const rawExistingData = await getRawSectionData(userId);
+    
+    let sectionDataToSave = data;
+    if (rawExistingData && rawExistingData[section]) {
+      console.log(`Merging existing multilingual data for ${section}...`);
+      sectionDataToSave = mergeMultilingualData(sectionDataToSave, rawExistingData[section]);
+    }
+
+    const normalizedData = normalizeDataStructure(sectionDataToSave, section);
 
     const payload = {
       storeId: userId,
@@ -100,12 +194,19 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   try {
     console.log(`=== Saving all sections (Status: ${status}, with normalization) ===`);
 
+    const rawExistingData = await getRawSectionData(userId);
     const normalizedContent: any = {};
 
     for (const sectionName in allSectionData) {
       if (VALID_SECTIONS.includes(sectionName)) {
-        console.log(`Normalizing ${sectionName}...`);
-        normalizedContent[sectionName] = normalizeDataStructure(allSectionData[sectionName], sectionName);
+        console.log(`Processing and merging ${sectionName}...`);
+        
+        let sectionDataToSave = allSectionData[sectionName];
+        if (rawExistingData && rawExistingData[sectionName]) {
+          sectionDataToSave = mergeMultilingualData(sectionDataToSave, rawExistingData[sectionName]);
+        }
+        
+        normalizedContent[sectionName] = normalizeDataStructure(sectionDataToSave, sectionName);
       } else {
         normalizedContent[sectionName] = allSectionData[sectionName];
       }
