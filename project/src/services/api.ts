@@ -165,6 +165,12 @@ export async function getStoreInfo(storeId: string): Promise<{ subdomain: string
     const result = await response.json();
     console.log('Store Info API Response:', result);
 
+    // ★ サーバーが200を返してもfound: falseなら未登録とみなす
+    if (result.found === false) {
+      console.warn('Store not found according to backend (found: false). Showing PaymentWall.');
+      return { subdomain: null, subscriptionStatus: null, notFound: true };
+    }
+
     return {
       subdomain: result.subdomain || result.Subdomain || null,
       subscriptionStatus: result.subscription_status || result.subscriptionStatus || null,

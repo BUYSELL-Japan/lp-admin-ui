@@ -151,11 +151,12 @@ const Dashboard: React.FC<DashboardProps> = ({
         <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">テンプレート</h2>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <p className="text-sm text-gray-600 mb-5">公開LPのデザインテンプレートを変更します。変更後は次回ビルド時に反映されます。</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { id: 'theme1', name: 'Standard', color: '#0d9488', desc: '清潔感・万能' },
               { id: 'theme2', name: 'Modern', color: '#3b82f6', desc: 'ダーク・高級感' },
               { id: 'theme3', name: 'Elegant', color: '#b45309', desc: '和風・エレガント' },
+              { id: 'theme4', name: 'Pop', color: '#ef4444', desc: 'ポップ・親しみ' },
             ].map(t => (
               <button
                 key={t.id}
@@ -179,7 +180,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
           {templateId && (
             <p className="mt-4 text-xs text-gray-400 text-center">
-              現在選択中: <strong className="text-gray-700">{templateId === 'theme1' ? 'Standard' : templateId === 'theme2' ? 'Modern' : 'Elegant'}</strong>
+              現在選択中: <strong className="text-gray-700">{templateId === 'theme1' ? 'Standard' : templateId === 'theme2' ? 'Modern' : templateId === 'theme3' ? 'Elegant' : 'Pop'}</strong>
             </p>
           )}
         </div>
