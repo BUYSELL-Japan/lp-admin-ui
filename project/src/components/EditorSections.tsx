@@ -594,7 +594,7 @@ export function NewsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
               <select
                 value={
                   typeof item.category === 'object'
-                    ? (item.category?.ja ?? item.category?.en ?? '')
+                    ? ((item.category as any)?.ja ?? (item.category as any)?.en ?? '')
                     : (item.category ?? '')
                 }
                 onChange={(e) => {
@@ -830,13 +830,24 @@ export function PricingEditor({ data, onUpdate, storeId }: EditorSectionProps) {
         />
       </div>
       {pricingData.plans.map((plan, index) => (
-        <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3">
-          <h4 className="font-medium">プラン {index + 1}</h4>
+        <div key={index} className={`p-4 border border-gray-200 rounded-lg space-y-3 ${!plan.name ? 'opacity-50 bg-gray-50' : ''}`}>
+          <div className="flex justify-between items-center">
+            <h4 className="font-medium">プラン {index + 1} {!plan.name && '(非表示)'}</h4>
+            <button
+              onClick={() => {
+                const newPlans = pricingData.plans.filter((_, i) => i !== index);
+                onUpdate({ plans: newPlans });
+              }}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              削除
+            </button>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">名前</label>
             <input
               type="text"
-              value={plan.name}
+              value={plan.name || ''}
               onChange={(e) => {
                 const newPlans = [...pricingData.plans];
                 newPlans[index] = { ...plan, name: e.target.value };

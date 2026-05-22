@@ -286,7 +286,7 @@ function App() {
                 if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
                   console.log(`  Merging section: ${key}`);
                   console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
-                  console.log(`    Default keys:`, prev[key] ? Object.keys(prev[key]).join(', ') : 'none');
+                  console.log(`    Default keys:`, (prev as any)[key] ? Object.keys((prev as any)[key]).join(', ') : 'none');
 
                   if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
                     const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
@@ -314,19 +314,19 @@ function App() {
                       };
                     });
 
-                    merged[key] = {
-                      ...prev[key],
+                    (merged as any)[key] = {
+                      ...(prev as any)[key],
                       ...savedData[key],
                       items: convertedItems
                     };
                     console.log(`    Converted storeInfo items:`, convertedItems);
                   } else {
-                    merged[key] = {
-                      ...prev[key],
+                    (merged as any)[key] = {
+                      ...(prev as any)[key],
                       ...savedData[key],
                     };
                   }
-                  console.log(`    Merged keys:`, Object.keys(merged[key]).join(', '));
+                  console.log(`    Merged keys:`, Object.keys((merged as any)[key]).join(', '));
                 } else {
                   console.log(`  Skipping empty or invalid section: ${key}`);
                 }
@@ -338,7 +338,7 @@ function App() {
               console.log('Merged company sample:', JSON.stringify(merged.company, null, 2).substring(0, 300));
               console.log('=== After Deep Merge ===');
               console.log('hero exists:', merged.hero ? 'Yes' : 'No');
-              console.log('hero.title:', merged.hero?.title || 'Missing');
+              console.log('hero.title:', merged.hero?.sectionTitle || 'Missing');
               console.log('storeInfo exists:', merged.storeInfo ? 'Yes' : 'No');
               console.log('storeInfo.items:', merged.storeInfo?.items?.length || 'Missing');
               console.log('company exists:', merged.company ? 'Yes' : 'No');
