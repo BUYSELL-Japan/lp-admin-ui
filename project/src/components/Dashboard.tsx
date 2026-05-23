@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error('ポータルセッションの作成に失敗しました');
+        throw new Error('ポ�EタルセチE��ョンの作�Eに失敗しました');
       }
 
       const { url } = await response.json();
@@ -48,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
     } catch (error) {
       console.error('Portal error:', error);
-      alert('現在Customer Portalは準備中です。環境設定をご確認ください。');
+      alert('現在Customer Portalは準備中です。環墁E��定をご確認ください、E);
     }
   };
 
@@ -61,13 +61,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const remainingDays = calculateRemainingDays(trialEnd);
-  const totalTrialDays = 30; // 30日と仮定
+  const totalTrialDays = 30; // 30日と仮宁E
   const trialProgress = trialEnd ? Math.max(0, Math.min(100, ((totalTrialDays - remainingDays) / totalTrialDays) * 100)) : 100;
 
   return (
     <div className="p-8 bg-gray-50 h-full flex flex-col items-center">
       <div className="w-full max-w-4xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Landy ダッシュボード</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Landy ダチE��ュボ�EチE/h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* 現在のプラン */}
@@ -83,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <CheckCircle size={16} className="text-green-500" />
-              <span>{subscriptionStatus === 'active' ? 'サブスクリプション有効' : (subscriptionStatus === 'trialing' ? 'トライアル中' : '未契約・確認中')}</span>
+              <span>{subscriptionStatus === 'active' ? 'サブスクリプション有効' : (subscriptionStatus === 'trialing' ? 'トライアル中' : '未契紁E�E確認中')}</span>
             </div>
           </div>
 
@@ -94,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
                   <Clock size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800">無料期間</h2>
+                <h2 className="text-xl font-bold text-gray-800">無料期閁E/h2>
               </div>
               <div className="mb-2 flex justify-between items-end">
                 <span className="text-gray-600">残り</span>
@@ -103,17 +103,17 @@ const Dashboard: React.FC<DashboardProps> = ({
               <div className="w-full bg-gray-100 rounded-full h-2.5 mb-2">
                 <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: `${trialProgress}%` }}></div>
               </div>
-              <p className="text-xs text-gray-500 text-right">終了予定: {trialEnd ? new Date(trialEnd).toLocaleDateString('ja-JP') : '-'}</p>
+              <p className="text-xs text-gray-500 text-right">終亁E��宁E {trialEnd ? new Date(trialEnd).toLocaleDateString('ja-JP') : '-'}</p>
             </div>
           )}
 
-          {/* サイト状況 */}
+          {/* サイト状況E*/}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-green-50 text-green-600 rounded-lg">
                 <ExternalLink size={24} />
               </div>
-              <h2 className="text-xl font-bold text-gray-800">サイト状況</h2>
+              <h2 className="text-xl font-bold text-gray-800">サイト状況E/h2>
             </div>
             <div className="mb-4">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -122,41 +122,41 @@ const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg break-all">
-              https://{subdomain ? `${subdomain}.global-reaches.com` : '(未設定).global-reaches.com'}
+              https://{subdomain ? `${subdomain}.neural-seeds.com` : '(未設宁E.neural-seeds.com'}
             </div>
           </div>
           
-          {/* プラン管理 */}
+          {/* プラン管琁E*/}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                 <Settings size={24} />
               </div>
-              <h2 className="text-xl font-bold text-gray-800">プラン管理</h2>
+              <h2 className="text-xl font-bold text-gray-800">プラン管琁E/h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              プランの変更、支払い方法の更新、または解約の手続きを行います。
+              プランの変更、支払い方法�E更新、また�E解紁E�E手続きを行います、E
             </p>
             <button
               onClick={handleOpenCustomerPortal}
               className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-medium text-sm"
             >
               <ExternalLink size={16} />
-              Customer Portal を開く
+              Customer Portal を開ぁE
             </button>
           </div>
         </div>
 
-        {/* テンプレート */}
-        <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">テンプレート</h2>
+        {/* チE��プレーチE*/}
+        <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">チE��プレーチE/h2>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <p className="text-sm text-gray-600 mb-5">公開LPのデザインテンプレートを変更します。変更後は次回ビルド時に反映されます。</p>
+          <p className="text-sm text-gray-600 mb-5">公開LPのチE��インチE��プレートを変更します。変更後�E次回ビルド時に反映されます、E/p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { id: 'theme1', name: 'Standard', color: '#0d9488', desc: '清潔感・万能' },
+              { id: 'theme1', name: 'Standard', color: '#0d9488', desc: '渁E��感・丁E�E' },
               { id: 'theme2', name: 'Modern', color: '#3b82f6', desc: 'ダーク・高級感' },
-              { id: 'theme3', name: 'Elegant', color: '#b45309', desc: '和風・エレガント' },
-              { id: 'theme4', name: 'Pop', color: '#ef4444', desc: 'ポップ・親しみ' },
+              { id: 'theme3', name: 'Elegant', color: '#b45309', desc: '和風・エレガンチE },
+              { id: 'theme4', name: 'Pop', color: '#ef4444', desc: 'ポップ�E親しみ' },
             ].map(t => (
               <button
                 key={t.id}
@@ -185,14 +185,14 @@ const Dashboard: React.FC<DashboardProps> = ({
           )}
         </div>
 
-        {/* クイックアクション */}
-        <h2 className="text-xl font-bold text-gray-900 mb-4">サイトの編集</h2>
+        {/* クイチE��アクション */}
+        <h2 className="text-xl font-bold text-gray-900 mb-4">サイト�E編雁E/h2>
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={onOpenEditor}
             className="flex-1 py-4 bg-blue-600 text-white rounded-xl shadow-sm border border-transparent hover:bg-blue-700 transition-colors font-bold text-lg flex items-center justify-center gap-2"
           >
-            エディターを開く
+            エチE��ターを開ぁE
           </button>
           <button
              onClick={onOpenPreview}
