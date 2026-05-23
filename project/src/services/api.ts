@@ -105,7 +105,7 @@ function mergeMultilingualData(newData: any, existingData: any): any {
   if (!existingData || typeof existingData !== 'object') return newData;
 
   const existingKeys = Object.keys(existingData);
-  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw', 'zh'];
   const isExistingMultilingual = existingKeys.length > 0 && languageKeys.some(k => existingKeys.includes(k));
 
   if (isExistingMultilingual && typeof newData === 'string') {
@@ -327,7 +327,7 @@ function extractJapanese(obj: any): any {
 
   // 多言語オブジェクトかチェック（ja, en, ko, zh-tw のキーを持つ）
   const keys = Object.keys(obj);
-  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw', 'zh'];
   const hasMultipleLanguages = languageKeys.filter(lang => keys.includes(lang)).length >= 2;
 
   if (hasMultipleLanguages && keys.includes('ja')) {
@@ -491,7 +491,7 @@ function convertMultilingualToEditorFormat(obj: any, depth: number = 0): any {
   }
 
   const keys = Object.keys(obj);
-  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw', 'zh'];
   const hasOnlyLanguageKeys = keys.length > 0 && keys.every(key => languageKeys.includes(key));
 
   if (hasOnlyLanguageKeys && obj.ja !== undefined) {
@@ -574,7 +574,7 @@ function convertCategoriesToMultilingual(categories: any[]): any[] {
 
   return categories.map(cat => {
     if (typeof cat === 'string') {
-      return { ja: cat, en: cat, ko: cat, 'zh-tw': cat };
+      return { ja: cat, en: cat, ko: cat, 'zh-tw': cat, zh: cat };
     }
     return convertLegacyFormatToMultilingual(cat);
   });
@@ -595,7 +595,7 @@ function convertStringFieldsToMultilingual(obj: any, depth: number = 0): any {
 
   if (typeof obj === 'object') {
     const keys = Object.keys(obj);
-    const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+    const languageKeys = ['ja', 'en', 'ko', 'zh-tw', 'zh'];
     const hasMultipleLanguages = languageKeys.filter(lang => keys.includes(lang)).length >= 2;
 
     if (hasMultipleLanguages) {
@@ -612,7 +612,7 @@ function convertStringFieldsToMultilingual(obj: any, depth: number = 0): any {
           key === 'categoryId') {
         result[key] = value;
       } else if (typeof value === 'string') {
-        result[key] = { ja: value, en: value, ko: value, 'zh-tw': value };
+        result[key] = { ja: value, en: value, ko: value, 'zh-tw': value, zh: value };
       } else {
         result[key] = convertStringFieldsToMultilingual(value, depth + 1);
       }
@@ -633,7 +633,7 @@ function hasMultilingualFormat(obj: any, depth: number = 0, maxDepth: number = 5
   }
 
   const keys = Object.keys(obj);
-  const languageKeys = ['ja', 'en', 'ko', 'zh-tw'];
+  const languageKeys = ['ja', 'en', 'ko', 'zh-tw', 'zh'];
 
   // 多言語オブジェクトかチェック
   const langKeysInObj = keys.filter(k => languageKeys.includes(k));
@@ -680,7 +680,7 @@ function normalizeDataStructure(data: any, sectionName: string): any {
       for (const item of items) {
         flatItems.push({
           ...item,
-          category: typeof categoryName === 'object' ? categoryName : { ja: categoryName, en: categoryName, ko: categoryName, 'zh-tw': categoryName }
+          category: typeof categoryName === 'object' ? categoryName : { ja: categoryName, en: categoryName, ko: categoryName, 'zh-tw': categoryName, zh: categoryName }
         });
       }
     }
@@ -693,7 +693,7 @@ function normalizeDataStructure(data: any, sectionName: string): any {
     if (normalized.categories && Array.isArray(normalized.categories)) {
       normalized.categories = normalized.categories.map((cat: any) => {
         if (typeof cat === 'string') {
-          return { ja: cat, en: cat, ko: cat, 'zh-tw': cat };
+          return { ja: cat, en: cat, ko: cat, 'zh-tw': cat, zh: cat };
         }
         return cat;
       });
@@ -704,13 +704,13 @@ function normalizeDataStructure(data: any, sectionName: string): any {
         const processedImg: any = { ...img };
 
         if (img.caption && typeof img.caption === 'string') {
-          processedImg.caption = { ja: img.caption, en: img.caption, ko: img.caption, 'zh-tw': img.caption };
+          processedImg.caption = { ja: img.caption, en: img.caption, ko: img.caption, 'zh-tw': img.caption, zh: img.caption };
         }
         if (img.alt && typeof img.alt === 'string') {
-          processedImg.alt = { ja: img.alt, en: img.alt, ko: img.alt, 'zh-tw': img.alt };
+          processedImg.alt = { ja: img.alt, en: img.alt, ko: img.alt, 'zh-tw': img.alt, zh: img.alt };
         }
         if (img.category && typeof img.category === 'string') {
-          processedImg.category = { ja: img.category, en: img.category, ko: img.category, 'zh-tw': img.category };
+          processedImg.category = { ja: img.category, en: img.category, ko: img.category, 'zh-tw': img.category, zh: img.category };
         }
 
         if (img.categoryId) {
@@ -747,7 +747,7 @@ function normalizeDataStructure(data: any, sectionName: string): any {
       if (convertedPlan.features && Array.isArray(convertedPlan.features)) {
         convertedPlan.features = convertedPlan.features.map((feature: any) => {
           if (typeof feature === 'string') {
-            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature };
+            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature, zh: feature };
           }
           if (feature.text_ja || feature.text_en) {
             return {
@@ -761,7 +761,7 @@ function normalizeDataStructure(data: any, sectionName: string): any {
             return feature;
           }
           if (typeof feature === 'object') {
-            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature };
+            return { ja: feature, en: feature, ko: feature, 'zh-tw': feature, zh: feature };
           }
           return feature;
         });
