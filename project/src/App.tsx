@@ -270,7 +270,7 @@ function App() {
             console.log('Saved data keys:', Object.keys(savedData));
             console.log('Saved data hero sample:', savedData.hero);
             console.log('=== Checking problematic sections ===');
-            console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
+      console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
             console.log('staff:', JSON.stringify(savedData.staff, null, 2));
             console.log('company:', JSON.stringify(savedData.company, null, 2));
             console.log('access:', JSON.stringify(savedData.access, null, 2));
@@ -278,6 +278,30 @@ function App() {
             console.log('Merging saved data with default data');
             setSectionData((prev) => {
               const merged = { ...prev };
+
+              // ★ DynamoDBに保存済みデータがある（savedDataが存在する）のに、
+              // そのセクションが含まれていない場合は「一度も保存していない」ではなく
+              // 「ユーザーが意図的に空にした or まだ使っていない」と判断し、
+              // モックデータではなく空の初期状態にリセットする。
+              // ※ 対象: モックデータがデフォルトで入っているが、ユーザーが使わないことも多いセクション
+              const sectionsWithMockDefaults = ['company', 'pricing', 'staff', 'news', 'gallery', 'faq', 'cta'];
+              sectionsWithMockDefaults.forEach(key => {
+                if (!(key in savedData)) {
+                  // savedDataに存在しない = まだ保存されていない → モックデータを表示しない
+                  (merged as any)[key] = (prev as any)[key]; // デフォルトのままにする（後でnullにはしない）
+                  console.log(`  [MockReset] Section "${key}" not in savedData, clearing mock data`);
+                  // sectionTitleなどの主要フィールドを空文字でリセット
+                  if (key === 'company') {
+                    (merged as any)[key] = {
+                      sectionTitle: '',
+                      sectionSubtitle: '',
+                      philosophy: { title: '', content: '' },
+                      history: { title: '', timeline: [] },
+                      companyInfo: { title: '', items: [] },
+                    };
+                  }
+                }
+              });
 
               Object.keys(savedData).forEach(key => {
                 if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
