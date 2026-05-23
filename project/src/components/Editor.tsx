@@ -14,7 +14,6 @@ import {
   CTAEditor,
   PricingEditor,
   FooterEditor,
-  ReviewsEditor,
   CompanyEditor,
   AccessEditor,
   FAQEditor,
@@ -54,7 +53,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     { id: 'cta', label: 'CTA' },
     { id: 'gallery', label: 'ギャラリー' },
     { id: 'staff', label: 'スタッフ' },
-    { id: 'reviews', label: 'お客様の声' },
     { id: 'news', label: 'お知らせ' },
     { id: 'storeInfo', label: '店舗情報' },
     { id: 'company', label: '事業所概要' },
@@ -170,8 +168,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         return <GalleryEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'staff':
         return <StaffEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
-      case 'reviews':
-        return <ReviewsEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'news':
         return <NewsEditor data={data} onUpdate={updateSectionData} storeId={userId || undefined} />;
       case 'storeInfo':

@@ -24,7 +24,6 @@ import {
   ctaData,
   galleryData,
   staffData,
-  reviewsData,
   newsData,
   storeInfoData,
   companyData,
@@ -55,7 +54,6 @@ function App() {
     cta: ctaData,
     gallery: galleryData,
     staff: staffData,
-    reviews: reviewsData,
     news: newsData,
     storeInfo: storeInfoData,
     company: companyData,
@@ -274,7 +272,6 @@ function App() {
             console.log('=== Checking problematic sections ===');
             console.log('pricing:', JSON.stringify(savedData.pricing, null, 2));
             console.log('staff:', JSON.stringify(savedData.staff, null, 2));
-            console.log('reviews:', JSON.stringify(savedData.reviews, null, 2));
             console.log('company:', JSON.stringify(savedData.company, null, 2));
             console.log('access:', JSON.stringify(savedData.access, null, 2));
             console.log('=====================================');
@@ -345,7 +342,6 @@ function App() {
               console.log('company.philosophy:', merged.company?.philosophy ? 'Yes' : 'No');
               console.log('pricing plans exists:', merged.pricing?.plans ? 'Yes' : 'No');
               console.log('staff members exists:', merged.staff?.members ? 'Yes' : 'No');
-              console.log('reviews reviews exists:', merged.reviews?.reviews ? 'Yes' : 'No');
               console.log('========================');
               return merged;
             });

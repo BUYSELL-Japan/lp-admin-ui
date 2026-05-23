@@ -11,7 +11,6 @@ import type {
   CTAData,
   PricingData,
   FooterData,
-  ReviewsData,
   CompanyData,
   AccessData,
   FAQData,
@@ -42,7 +41,6 @@ export function HeaderEditor({ data, onUpdate, storeId }: EditorSectionProps) {
     { id: 'pricing', defaultLabel: 'コース・プラン' },
     { id: 'gallery', defaultLabel: 'ギャラリー' },
     { id: 'staff', defaultLabel: 'スタッフ' },
-    { id: 'reviews', defaultLabel: 'お客様の声' },
     { id: 'news', defaultLabel: 'お知らせ' },
     { id: 'storeInfo', defaultLabel: '店舗情報' },
     { id: 'company', defaultLabel: '事業所概要' },
@@ -1019,114 +1017,6 @@ export function FooterEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   );
 }
 
-export function ReviewsEditor({ data, onUpdate, storeId }: EditorSectionProps) {
-  const reviewsData = data as ReviewsData;
-
-  if (!reviewsData || !reviewsData.reviews) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        お客様の声データが読み込まれていません
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
-        <input
-          type="text"
-          value={reviewsData.sectionTitle || ''}
-          onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
-          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
-        <input
-          type="text"
-          value={reviewsData.sectionSubtitle || ''}
-          onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
-          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div className="space-y-3 max-h-[500px] overflow-y-auto">
-        {reviewsData.reviews.slice(0, 3).map((review, index) => (
-          <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3">
-            <h4 className="font-medium">レビュー {index + 1}</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">名前</label>
-                <input
-                  type="text"
-                  value={review.name}
-                  onChange={(e) => {
-                    const newReviews = [...reviewsData.reviews];
-                    newReviews[index] = { ...review, name: e.target.value };
-                    onUpdate({ reviews: newReviews });
-                  }}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">評価（1-5）</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={review.rating}
-                  onChange={(e) => {
-                    const newReviews = [...reviewsData.reviews];
-                    newReviews[index] = { ...review, rating: parseInt(e.target.value) || 5 };
-                    onUpdate({ reviews: newReviews });
-                  }}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">コメント</label>
-              <textarea
-                value={review.comment}
-                onChange={(e) => {
-                  const newReviews = [...reviewsData.reviews];
-                  newReviews[index] = { ...review, comment: e.target.value };
-                  onUpdate({ reviews: newReviews });
-                }}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">日付</label>
-              <input
-                type="text"
-                value={review.date}
-                onChange={(e) => {
-                  const newReviews = [...reviewsData.reviews];
-                  newReviews[index] = { ...review, date: e.target.value };
-                  onUpdate({ reviews: newReviews });
-                }}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <ImageUpload
-              value={review.avatar}
-              onChange={(url) => {
-                const newReviews = [...reviewsData.reviews];
-                newReviews[index] = { ...review, avatar: url };
-                onUpdate({ reviews: newReviews });
-              }}
-              label="アバター画像"
-              storeId={storeId}
-            />
-          </div>
-        ))}
-        <p className="text-xs text-gray-500">最初の3件のみ表示しています</p>
-      </div>
-    </div>
-  );
-}
 
 export function CompanyEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const companyData = data as CompanyData;
