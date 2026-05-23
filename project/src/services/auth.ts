@@ -15,7 +15,7 @@ interface DecodedToken {
 
 const COGNITO_DOMAIN = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com';
 const CLIENT_ID = '12nf22nqg8mpcq1q77nm5uqbls';
-const REDIRECT_URI = 'https://admin-lp.neural-seeds.com';
+const REDIRECT_URI = 'https://admin-lp.global-reaches.com';
 
 function base64UrlDecode(str: string): string {
   let base64 = str.replace(/-/g, '+').replace(/_/g, '/');

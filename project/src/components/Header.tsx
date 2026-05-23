@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getText } from '../utils/i18n';
 import LanguageSelector from './LanguageSelector';
 
-const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.neural-seeds.com';
+const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
 interface HeaderProps {
   data: any;

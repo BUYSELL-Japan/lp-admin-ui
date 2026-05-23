@@ -42,7 +42,7 @@ function App() {
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  // ☁E初期値をtrueにしてuserId設定直後にPaymentWallがちらつく�Eを防ぁE
+  // ★ 初期値をtrueにしてuserId設定直後にPaymentWallがちらつくのを防ぐ
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string>('theme1');
@@ -80,17 +80,17 @@ function App() {
       console.log('Stored id_token exists:', !!localStorage.getItem('id_token'));
       console.log('==========================');
 
-      // Stripe決済直征E(session_idがあめE の場合�E、カスタム属性(store_id)が最新化されてぁE��ため、E
-      // 既存�E古ぁE��ークンを破棁E��て、Cognitoから新しいト�Eクンを取り直す忁E��があります、E
+      // Stripe決済直後 (session_idがある) の場合は、カスタム属性(store_id)が最新化されているため、
+      // 既存の古いトークンを破棄して、Cognitoから新しいトークンを取り直す必要があります。
       if (sessionId && !code) {
         console.log('DEBUG: Returned from Stripe Checkout. Saving session_id and forcing fresh login...');
-        // ☁ECognitoリダイレクト後も「決済直後」とわかるよぁE��フラグを保孁E
+        // ★ Cognitoリダイレクト後も「決済直後」とわかるようにフラグを保存
         localStorage.setItem('stripe_just_paid', '1');
         clearAuthData();
         
-        // CognitoのログインURLへリダイレクトして新しいト�Eクンを要汁E
-        // ※Googleにログイン済みなら画面は出ずに一瞬でリダイレクトして戻ってきまぁE
-        const COGNITO_AUTHORIZE_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.neural-seeds.com';
+        // CognitoのログインURLへリダイレクトして新しいトークンを要求
+        // ※Googleにログイン済みなら画面は出ずに一瞬でリダイレクトして戻ってきます
+        const COGNITO_AUTHORIZE_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/oauth2/authorize?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https://admin-lp.global-reaches.com';
         window.location.href = COGNITO_AUTHORIZE_URL;
         return;
       }
@@ -141,7 +141,7 @@ function App() {
             console.error('Error fetching store_id by sub:', err);
           }
 
-          // フォールバック: DBから取得できなかった場合�Eト�Eクンの属性を使ぁE
+          // フォールバック: DBから取得できなかった場合はトークンの属性を使う
           if (!storeId) {
             storeId = getStoreIdFromToken(tokens.id_token);
             console.log('DEBUG: Using custom:store_id as fallback:', storeId);
@@ -192,17 +192,17 @@ function App() {
       return;
     }
 
-    let isMounted = true; // アンマウント後�E状態更新を防ぁE
+    let isMounted = true; // アンマウント後の状態更新を防ぐ
 
     const loadSectionData = async () => {
       setIsCheckingSubscription(true);
       try {
-          // ☁EStripe決済直後フラグを確誁E
+          // ★ Stripe決済直後フラグを確認
           const justPaid = localStorage.getItem('stripe_just_paid') === '1';
 
           let storeInfo = await getStoreInfo(userId);
 
-          // ☁E404: ストアがDynamoDBに未登録 ↁEPaymentWallを表示�E�リダイレクトしなぁE��E��E
+          // ★ 404: ストアがDynamoDBに未登録 → PaymentWallを表示（リダイレクトしない！）
           if (storeInfo.notFound) {
             console.warn('Store not registered yet. Showing PaymentWall.');
             if (isMounted) {
@@ -211,7 +211,7 @@ function App() {
             return;
           }
 
-          // ☁Eネットワークエラーなどで両方nullの場合�E1回リトライ
+          // ★ ネットワークエラーなどで両方nullの場合は1回リトライ
           if (!storeInfo.subdomain && !storeInfo.subscriptionStatus) {
             console.warn('Store info returned empty (network error?), retrying once...');
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -236,11 +236,11 @@ function App() {
           setTrialEnd(storeInfo.trialEnd || null);
           setTemplateId(storeInfo.templateId || 'theme1');
 
-          // ☁E決済直後にWebhookがまだ届いてぁE��ぁE��合�Eリトライポ�Eリング
+          // ★ 決済直後にWebhookがまだ届いていない場合のリトライポーリング
           if (justPaid && storeInfo.subscriptionStatus !== 'active') {
             console.log('Stripe just paid flag detected. Polling for subscription activation...');
             let retries = 0;
-            const maxRetries = 10; // 最大10囁E= 30私E
+            const maxRetries = 10; // 最大10回 = 30秒
             while (retries < maxRetries && storeInfo.subscriptionStatus !== 'active') {
               await new Promise(resolve => setTimeout(resolve, 3000));
               console.log(`Polling attempt ${retries + 1}/${maxRetries}...`);
@@ -248,11 +248,11 @@ function App() {
               retries++;
             }
             if (storeInfo.subscriptionStatus === 'active') {
-              console.log('✁ESubscription confirmed active after polling!');
+              console.log('✅ Subscription confirmed active after polling!');
               localStorage.removeItem('stripe_just_paid');
             } else {
-              console.warn('⚠�E�ESubscription still not active after 30s polling.');
-              // ポ�Eリング上限に達してもフラグを削除してループを防ぁE
+              console.warn('⚠️ Subscription still not active after 30s polling.');
+              // ポーリング上限に達してもフラグを削除してループを防ぐ
               localStorage.removeItem('stripe_just_paid');
             }
           } else if (justPaid && storeInfo.subscriptionStatus === 'active') {
@@ -260,7 +260,7 @@ function App() {
             localStorage.removeItem('stripe_just_paid');
           }
 
-          // ☁EsubscriptionStatus確定後にsection dataを読み込む
+          // ★ subscriptionStatus確定後にsection dataを読み込む
           if (!isMounted) return;
           setSubscriptionStatus(storeInfo.subscriptionStatus);
 
@@ -356,7 +356,7 @@ function App() {
         } catch (error) {
           console.error('Error loading store data:', error);
         } finally {
-          // ☁E成功・失敗どちらでも忁E��スピナーを解除する
+          // ★ 成功・失敗どちらでも必ずスピナーを解除する
           if (isMounted) setIsCheckingSubscription(false);
         }
     };
@@ -364,7 +364,7 @@ function App() {
     loadSectionData();
 
     return () => {
-      isMounted = false; // クリーンアチE�E�E�アンマウント時にフラグをfalseにする
+      isMounted = false; // クリーンアップ：アンマウント時にフラグをfalseにする
     };
   }, [userId]);
 
@@ -404,7 +404,7 @@ function App() {
               onClick={handleDashboardToggle}
               className="px-4 py-3 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-900 flex items-center gap-2"
             >
-              <span>ダチE��ュボ�EチE/span>
+              <span>ダッシュボード</span>
             </button>
           )}
           <button
@@ -414,7 +414,7 @@ function App() {
             {activeTab === 'preview' ? (
               <>
                 <Edit size={20} />
-                <span>編雁E/span>
+                <span>編集</span>
               </>
             ) : (
               <>
@@ -426,12 +426,12 @@ function App() {
         </div>
 
         <div className="flex h-screen">
-          {/* 左側のプレビュー画面、エチE��タータブまた�EダチE��ュボ�Eドタブ�E場合�EPC環墁E�Eみ表示されめE*/}
+          {/* 左側のプレビュー画面、エディタータブまたはダッシュボードタブの場合はPC環境のみ表示される */}
           <div className={`flex-1 ${activeTab === 'preview' ? 'block' : 'hidden'} md:block transition-all`}>
             <Preview sectionData={sectionData} isAuthenticated={!!userId} subdomain={subdomain} />
           </div>
           
-          {/* 右側の操作パネル�E�ダチE��ュボ�Eドまた�EエチE��ター�E�E*/}
+          {/* 右側の操作パネル（ダッシュボードまたはエディター） */}
           <div className={`w-full md:w-[500px] ${activeTab === 'preview' ? 'hidden' : 'block'} bg-white overflow-y-auto flex flex-col`}>
              {/* タブナビゲーション */}
              {userId && subscriptionStatus === 'active' && (
@@ -442,7 +442,7 @@ function App() {
                     activeTab === 'dashboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  ダチE��ュボ�EチE
+                  ダッシュボード
                 </button>
                 <button
                   onClick={() => setActiveTab('editor')}
@@ -450,17 +450,17 @@ function App() {
                     activeTab === 'editor' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  エチE��ター
+                  エディター
                 </button>
               </div>
             )}
 
-            {/* コンチE��チE��リア */}
+            {/* コンテンツエリア */}
             <div className="flex-1 overflow-y-auto">
               {userId && isCheckingSubscription ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                   <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p>契紁E��況を確認してぁE��ぁE..</p>
+                  <p>契約状況を確認しています...</p>
                 </div>
               ) : userId && subscriptionStatus !== 'active' ? (
                 <PaymentWall storeId={userId} />

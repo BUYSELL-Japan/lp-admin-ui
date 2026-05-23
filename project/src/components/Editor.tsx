@@ -32,8 +32,8 @@ interface EditorProps {
   onSubdomainFetched?: (subdomain: string | null) => void;
 }
 
-const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.neural-seeds.com';
-const LOGOUT_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/logout?client_id=12nf22nqg8mpcq1q77nm5uqbls&logout_uri=https%3A%2F%2Fadmin-lp.neural-seeds.com';
+const LOGIN_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/login?client_id=12nf22nqg8mpcq1q77nm5uqbls&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
+const LOGOUT_URL = 'https://ap-southeast-2usngbi9wi.auth.ap-southeast-2.amazoncognito.com/logout?client_id=12nf22nqg8mpcq1q77nm5uqbls&logout_uri=https%3A%2F%2Fadmin-lp.global-reaches.com';
 
 export default function Editor({ userId, sectionData, onSectionChange, isAuthenticated, isAuthenticating, onSubdomainFetched }: EditorProps) {
   const [activeSection, setActiveSection] = useState('hero');
@@ -45,22 +45,22 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
 
   const sections = [
-    { id: 'settings', label: '基本設宁EチE�EチE },
+    { id: 'settings', label: '基本設定/テーマ' },
     { id: 'header', label: 'ヘッダー' },
-    { id: 'hero', label: 'ヒ�Eロー' },
+    { id: 'hero', label: 'ヒーロー' },
     { id: 'about', label: 'こだわり' },
-    { id: 'menu', label: 'お品書ぁE },
+    { id: 'menu', label: 'お品書き' },
     { id: 'pricing', label: 'コース・プラン' },
     { id: 'cta', label: 'CTA' },
     { id: 'gallery', label: 'ギャラリー' },
-    { id: 'staff', label: 'スタチE��' },
-    { id: 'reviews', label: 'お客様�E声' },
+    { id: 'staff', label: 'スタッフ' },
+    { id: 'reviews', label: 'お客様の声' },
     { id: 'news', label: 'お知らせ' },
-    { id: 'storeInfo', label: '店�E惁E��' },
-    { id: 'company', label: '事業所概要E },
+    { id: 'storeInfo', label: '店舗情報' },
+    { id: 'company', label: '事業所概要' },
     { id: 'access', label: 'アクセス' },
-    { id: 'faq', label: 'よくある質啁E },
-    { id: 'contact', label: 'お問ぁE��わせ' },
+    { id: 'faq', label: 'よくある質問' },
+    { id: 'contact', label: 'お問い合わせ' },
     { id: 'footer', label: 'フッター' },
   ];
 
@@ -74,7 +74,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
   const handleSave = async () => {
     if (!userId) {
-      alert('保存するにはログインが忁E��でぁE);
+      alert('保存するにはログインが必要です');
       return;
     }
     setIsSaving(true);
@@ -91,15 +91,15 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
   const handlePublish = async () => {
     if (!userId) {
-      alert('公開するにはログインが忁E��でぁE);
+      alert('公開するにはログインが必要です');
       return;
     }
     setIsPublishing(true);
-    // Lambda側でCloudflare Webhookも�E動でトリガーされめE
+    // Lambda側でCloudflare Webhookも自動でトリガーされる
     const success = await saveAllSections(userId, sectionData, 'Published');
     setIsPublishing(false);
     if (success) {
-      alert('すべてのセクションを「�E開」スチE�Eタスで保存�E反映しました�E�\n�E�紁E刁E��本番サイトへ反映されます！E);
+      alert('すべてのセクションを「公開」ステータスで保存・反映しました！\n（約1分で本番サイトへ反映されます）');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
         onSubdomainFetched(subdomain);
@@ -109,7 +109,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
   const handleTranslateAndSave = async () => {
     if (!userId) {
-      alert('保存するにはログインが忁E��でぁE);
+      alert('保存するにはログインが必要です');
       return;
     }
     setIsTranslating(true);
@@ -121,7 +121,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
     setIsTranslating(false);
     if (success) {
-      alert('翻訳と保存が完亁E��ました');
+      alert('翻訳と保存が完了しました');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
         onSubdomainFetched(subdomain);
@@ -150,7 +150,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     if (!data) {
       return (
         <div className="text-center text-gray-500 py-8">
-          チE�Eタがありません
+          データがありません
         </div>
       );
     }
@@ -193,7 +193,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       default:
         return (
           <div className="text-center text-gray-500 py-8">
-            こ�EセクションのエチE��ターは準備中でぁE
+            このセクションのエディターは準備中です
           </div>
         );
     }
@@ -203,17 +203,17 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     <div className="h-screen flex flex-col bg-white border-l border-gray-200">
       {showLoginSuccess && (
         <div className="bg-green-50 border-b border-green-200 px-4 py-3 text-green-800 text-sm">
-          ✁Eログインに成功しました�E�編雁E�E容を保存できます、E
+          ✓ ログインに成功しました！編集内容を保存できます。
         </div>
       )}
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-b border-gray-200 gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight">エチE��ター</h2>
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight">エディター</h2>
           {isAuthenticated && (
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-              title="設宁E
+              title="設定"
             >
               <Settings size={20} />
             </button>
@@ -246,7 +246,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
                 className="w-full h-10 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
               >
                 <Save size={16} className={isSaving ? 'animate-pulse text-indigo-500' : 'text-gray-500'} />
-                {isSaving ? '保存中...' : '下書き保孁E}
+                {isSaving ? '保存中...' : '下書き保存'}
               </button>
 
               <button
@@ -255,7 +255,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
                 className="w-full h-10 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-bold transition-all shadow-md ring-1 ring-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
               >
                 <Globe size={16} className={isPublishing ? 'animate-spin' : ''} />
-                {isPublishing ? '処琁E��...' : '公閁E(Publish)'}
+                {isPublishing ? '処理中...' : '公開 (Publish)'}
               </button>
 
               <button
@@ -264,7 +264,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
                 className="w-full h-10 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
               >
                 <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
-                多言語で確宁E
+                多言語で確定
               </button>
 
               <button
@@ -272,7 +272,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
                 className="w-full h-10 bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-lg flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200"
               >
                 <LogOut size={16} />
-                ログアウチE
+                ログアウト
               </button>
             </div>
           )}
@@ -281,9 +281,9 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
       {showSettings && (
         <div className="p-4 bg-yellow-50 border-b border-yellow-200 space-y-3">
-          <h3 className="font-medium text-sm">S3設宁E/h3>
+          <h3 className="font-medium text-sm">S3設定</h3>
           <div>
-            <label className="block text-xs font-medium text-gray-700">S3 アチE�EローチEエンド�EインチE/label>
+            <label className="block text-xs font-medium text-gray-700">S3 アップロード エンドポイント</label>
             <input
               id="s3_endpoint"
               type="text"
@@ -296,7 +296,7 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
             onClick={handleSettingsSave}
             className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            設定を保孁E
+            設定を保存
           </button>
         </div>
       )}
