@@ -279,27 +279,33 @@ function App() {
             setSectionData((prev) => {
               const merged = { ...prev };
 
-              // ★ DynamoDBに保存済みデータがある（savedDataが存在する）のに、
-              // そのセクションが含まれていない場合は「一度も保存していない」ではなく
-              // 「ユーザーが意図的に空にした or まだ使っていない」と判断し、
-              // モックデータではなく空の初期状態にリセットする。
-              // ※ 対象: モックデータがデフォルトで入っているが、ユーザーが使わないことも多いセクション
-              const sectionsWithMockDefaults = ['company', 'pricing', 'staff', 'news', 'gallery', 'faq', 'cta'];
-              sectionsWithMockDefaults.forEach(key => {
-                if (!(key in savedData)) {
-                  // savedDataに存在しない = まだ保存されていない → モックデータを表示しない
-                  (merged as any)[key] = (prev as any)[key]; // デフォルトのままにする（後でnullにはしない）
-                  console.log(`  [MockReset] Section "${key}" not in savedData, clearing mock data`);
-                  // sectionTitleなどの主要フィールドを空文字でリセット
-                  if (key === 'company') {
-                    (merged as any)[key] = {
-                      sectionTitle: '',
-                      sectionSubtitle: '',
-                      philosophy: { title: '', content: '' },
-                      history: { title: '', timeline: [] },
-                      companyInfo: { title: '', items: [] },
-                    };
-                  }
+              // ★ DynamoDBに保存済みデータがある（savedDataが存在する）場合、
+              // 特定のセクション（モックデータがデフォルトで入るもの）については
+              // prev（モックデータ）を空の構造にリセットしてからマージする。
+              // そうしないと、ユーザーが一部のフィールドを消して保存したときに
+              // 欠落したフィールドがモックデータ（prev）で補完されて復活してしまう。
+              const sectionsToClear = ['company', 'pricing', 'staff', 'news', 'gallery', 'faq', 'cta'];
+              sectionsToClear.forEach(key => {
+                console.log(`  [MockReset] Clearing mock data for section "${key}" before merge`);
+                if (key === 'company') {
+                  (merged as any)[key] = {
+                    sectionTitle: '', sectionSubtitle: '',
+                    philosophy: { title: '', content: '' },
+                    history: { title: '', timeline: [] },
+                    companyInfo: { title: '', items: [] },
+                  };
+                } else if (key === 'pricing') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', plans: [] };
+                } else if (key === 'staff') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', members: [] };
+                } else if (key === 'news') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', items: [] };
+                } else if (key === 'gallery') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', categories: [], images: [] };
+                } else if (key === 'faq') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', items: [] };
+                } else if (key === 'cta') {
+                  (merged as any)[key] = { sectionTitle: '', sectionSubtitle: '', description: '', buttons: [], backgroundImage: '' };
                 }
               });
 
@@ -307,7 +313,7 @@ function App() {
                 if (savedData[key] && typeof savedData[key] === 'object' && Object.keys(savedData[key]).length > 0) {
                   console.log(`  Merging section: ${key}`);
                   console.log(`    Saved keys:`, Object.keys(savedData[key]).join(', '));
-                  console.log(`    Default keys:`, (prev as any)[key] ? Object.keys((prev as any)[key]).join(', ') : 'none');
+                  console.log(`    Default keys:`, (merged as any)[key] ? Object.keys((merged as any)[key]).join(', ') : 'none');
 
                   if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
                     const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
@@ -336,14 +342,14 @@ function App() {
                     });
 
                     (merged as any)[key] = {
-                      ...(prev as any)[key],
+                      ...(merged as any)[key], // ★ prev ではなく merged（クリア済み）を使う
                       ...savedData[key],
                       items: convertedItems
                     };
                     console.log(`    Converted storeInfo items:`, convertedItems);
                   } else {
                     (merged as any)[key] = {
-                      ...(prev as any)[key],
+                      ...(merged as any)[key], // ★ prev ではなく merged（クリア済み）を使う
                       ...savedData[key],
                     };
                   }
