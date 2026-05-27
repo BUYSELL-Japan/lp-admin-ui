@@ -1212,6 +1212,12 @@ export function CompanyEditor({ data, onUpdate, storeId }: EditorSectionProps) {
 export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const accessData = data as AccessData;
 
+  const getStringValue = (val: any) => {
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && val !== null) return val.ja || '';
+    return '';
+  };
+
   if (!accessData || !accessData.parking || !accessData.transportation || !accessData.transportation.methods) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -1226,7 +1232,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">セクションタイトル</label>
         <input
           type="text"
-          value={accessData.sectionTitle || ''}
+          value={getStringValue(accessData.sectionTitle)}
           onChange={(e) => onUpdate({ sectionTitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1235,7 +1241,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">サブタイトル</label>
         <input
           type="text"
-          value={accessData.sectionSubtitle || ''}
+          value={getStringValue(accessData.sectionSubtitle)}
           onChange={(e) => onUpdate({ sectionSubtitle: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1244,7 +1250,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
         <label className="block text-sm font-medium text-gray-700">住所</label>
         <input
           type="text"
-          value={accessData.address || ''}
+          value={getStringValue(accessData.address)}
           onChange={(e) => onUpdate({ address: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -1252,7 +1258,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700">地図埋め込みURL</label>
         <textarea
-          value={accessData.mapEmbedUrl || ''}
+          value={getStringValue(accessData.mapEmbedUrl)}
           onChange={(e) => onUpdate({ mapEmbedUrl: e.target.value })}
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           rows={3}
@@ -1264,7 +1270,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           <label className="block text-sm font-medium text-gray-700">タイトル</label>
           <input
             type="text"
-            value={accessData.parking.title}
+            value={getStringValue(accessData.parking.title)}
             onChange={(e) => onUpdate({
               parking: { ...accessData.parking, title: e.target.value }
             })}
@@ -1275,7 +1281,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           <label className="block text-sm font-medium text-gray-700">説明</label>
           <input
             type="text"
-            value={accessData.parking.description}
+            value={getStringValue(accessData.parking.description)}
             onChange={(e) => onUpdate({
               parking: { ...accessData.parking, description: e.target.value }
             })}
@@ -1286,7 +1292,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           <label className="block text-sm font-medium text-gray-700">駐車台数</label>
           <input
             type="text"
-            value={accessData.parking.spaces}
+            value={getStringValue(accessData.parking.spaces)}
             onChange={(e) => onUpdate({
               parking: { ...accessData.parking, spaces: e.target.value }
             })}
@@ -1296,7 +1302,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
         <div>
           <label className="block text-sm font-medium text-gray-700">備考</label>
           <textarea
-            value={accessData.parking.notes}
+            value={getStringValue(accessData.parking.notes)}
             onChange={(e) => onUpdate({
               parking: { ...accessData.parking, notes: e.target.value }
             })}
@@ -1311,7 +1317,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           <label className="block text-sm font-medium text-gray-700">タイトル</label>
           <input
             type="text"
-            value={accessData.transportation.title}
+            value={getStringValue(accessData.transportation.title)}
             onChange={(e) => onUpdate({
               transportation: { ...accessData.transportation, title: e.target.value }
             })}
@@ -1326,7 +1332,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
                   <label className="block text-xs font-medium text-gray-700">種類</label>
                   <input
                     type="text"
-                    value={method.type}
+                    value={getStringValue(method.type)}
                     onChange={(e) => {
                       const newMethods = [...accessData.transportation.methods];
                       newMethods[index] = { ...method, type: e.target.value };
@@ -1339,7 +1345,7 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
                   <label className="block text-xs font-medium text-gray-700">説明</label>
                   <input
                     type="text"
-                    value={method.description}
+                    value={getStringValue(method.description)}
                     onChange={(e) => {
                       const newMethods = [...accessData.transportation.methods];
                       newMethods[index] = { ...method, description: e.target.value };
