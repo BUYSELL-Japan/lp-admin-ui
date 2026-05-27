@@ -360,6 +360,28 @@ export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
     );
   }
 
+  const MAX_GALLERY_IMAGES = 20;
+
+  const addGalleryImage = () => {
+    if (galleryData.images.length >= MAX_GALLERY_IMAGES) {
+      alert(`ギャラリー画像は最大${MAX_GALLERY_IMAGES}枚までです`);
+      return;
+    }
+    const defaultCategory = galleryData.categories[1] || galleryData.categories[0] || '料理';
+    const newImage = {
+      url: '',
+      caption: '新しい画像',
+      category: defaultCategory,
+    };
+    const newImages = [...galleryData.images, newImage];
+    onUpdate({ images: newImages });
+  };
+
+  const removeGalleryImage = (index: number) => {
+    const newImages = galleryData.images.filter((_, i) => i !== index);
+    onUpdate({ images: newImages });
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -380,10 +402,30 @@ export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
           className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-gray-600">
+          画像枚数: {galleryData.images.length} / {MAX_GALLERY_IMAGES}
+        </p>
+        <button
+          onClick={addGalleryImage}
+          disabled={galleryData.images.length >= MAX_GALLERY_IMAGES}
+          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+        >
+          画像を追加
+        </button>
+      </div>
       <div className="space-y-3 max-h-[500px] overflow-y-auto">
-        {galleryData.images.slice(0, 5).map((image, index) => (
+        {galleryData.images.map((image, index) => (
           <div key={index} className="p-3 border border-gray-200 rounded-lg space-y-2">
-            <h4 className="font-medium text-sm">画像 {index + 1}</h4>
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="font-medium text-sm">画像 {index + 1}</h4>
+              <button
+                onClick={() => removeGalleryImage(index)}
+                className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors"
+              >
+                削除
+              </button>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700">キャプション</label>
               <input
@@ -404,7 +446,6 @@ export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
                 onChange={(e) => {
                   const categoryValue = e.target.value;
                   let categoryId = '';
-
                   if (categoryValue === '料理') {
                     categoryId = '1';
                   } else if (categoryValue === '店内') {
@@ -412,13 +453,8 @@ export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
                   } else if (categoryValue === 'イベント') {
                     categoryId = '3';
                   }
-
                   const newImages = [...galleryData.images];
-                  newImages[index] = {
-                    ...image,
-                    category: categoryValue,
-                    categoryId: categoryId
-                  };
+                  newImages[index] = { ...image, category: categoryValue, categoryId };
                   onUpdate({ images: newImages });
                 }}
                 className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -442,7 +478,6 @@ export function GalleryEditor({ data, onUpdate, storeId }: EditorSectionProps) {
             />
           </div>
         ))}
-        <p className="text-xs text-gray-500">最初の5件のみ表示しています</p>
       </div>
     </div>
   );
