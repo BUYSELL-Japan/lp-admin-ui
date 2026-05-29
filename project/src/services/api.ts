@@ -1725,12 +1725,18 @@ async function translateSectionInBatches(
 export async function translateAndSave(
   userId: string,
   allSectionData: any,
-  onProgress?: (current: number, total: number, sectionName: string) => void
+  onProgress?: (current: number, total: number, sectionName: string) => void,
+  targetSections?: string[]
 ): Promise<boolean> {
   try {
+    // ターゲットが指定されていればそれを使用し、なければ全セクション
+    const keysToTranslate = targetSections && targetSections.length > 0 
+      ? targetSections 
+      : Object.keys(allSectionData);
+
     // 有効なセクションのみをフィルタリング
-    const sections = Object.keys(allSectionData).filter(sectionName =>
-      VALID_SECTIONS.includes(sectionName)
+    const sections = keysToTranslate.filter(sectionName =>
+      VALID_SECTIONS.includes(sectionName) && allSectionData[sectionName] !== undefined
     );
 
     const mergedContent: any = {};

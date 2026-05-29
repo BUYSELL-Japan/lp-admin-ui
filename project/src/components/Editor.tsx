@@ -42,6 +42,8 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [translationProgress, setTranslationProgress] = useState({ current: 0, total: 0, sectionName: '' });
   const [showSettings, setShowSettings] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
+  // 編集されたセクションを記憶
+  const [dirtySections, setDirtySections] = useState<Set<string>>(new Set());
 
   const sections = [
     { id: 'settings', label: '基本設定/テーマ' },
@@ -113,12 +115,21 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     setIsTranslating(true);
     setTranslationProgress({ current: 0, total: 0, sectionName: '' });
 
-    const success = await translateAndSave(userId, sectionData, (current, total, sectionName) => {
-      setTranslationProgress({ current, total, sectionName });
-    });
+    // 変更されたセクションがあればそれを対象にし、なければ全セクション（フォールバック）
+    const targetSections = dirtySections.size > 0 ? Array.from(dirtySections) : undefined;
+
+    const success = await translateAndSave(
+      userId, 
+      sectionData, 
+      (current, total, sectionName) => {
+        setTranslationProgress({ current, total, sectionName });
+      },
+      targetSections
+    );
 
     setIsTranslating(false);
     if (success) {
+      setDirtySections(new Set()); // 翻訳完了後にリセット
       alert('翻訳と保存が完了しました');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
@@ -141,6 +152,9 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
   const updateSectionData = (updates: any) => {
     onSectionChange(activeSection, { ...sectionData[activeSection], ...updates });
+    if (activeSection !== 'settings') {
+      setDirtySections(prev => new Set(prev).add(activeSection));
+    }
   };
 
   const renderEditor = () => {
