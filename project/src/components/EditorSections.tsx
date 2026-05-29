@@ -1213,8 +1213,15 @@ export function AccessEditor({ data, onUpdate, storeId }: EditorSectionProps) {
   const accessData = data as AccessData;
 
   const getStringValue = (val: any) => {
-    if (typeof val === 'string') return val;
-    if (typeof val === 'object' && val !== null) return val.ja || '';
+    if (typeof val === 'string') {
+      if (val === '[object Object]') return '';
+      return val;
+    }
+    if (typeof val === 'object' && val !== null) {
+      if (val.ja) return val.ja;
+      const firstStr = Object.values(val).find(v => typeof v === 'string');
+      return firstStr || '';
+    }
     return '';
   };
 
