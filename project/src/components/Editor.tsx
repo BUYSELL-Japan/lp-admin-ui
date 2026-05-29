@@ -115,8 +115,14 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     setIsTranslating(true);
     setTranslationProgress({ current: 0, total: 0, sectionName: '' });
 
-    // 変更されたセクションがあればそれを対象にし、なければ全セクション（フォールバック）
-    const targetSections = dirtySections.size > 0 ? Array.from(dirtySections) : undefined;
+    // 変更されたセクションがない場合は処理をスキップ
+    if (dirtySections.size === 0) {
+      alert('変更されたセクションがありません。\n（※編集したセクションのみ高速翻訳されます）');
+      setIsTranslating(false);
+      return;
+    }
+    
+    const targetSections = Array.from(dirtySections);
 
     const success = await translateAndSave(
       userId, 
