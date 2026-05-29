@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Save, Settings, LogIn, Languages, LogOut, Globe, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Settings, LogIn, Languages, LogOut, Globe } from 'lucide-react';
 import { saveAllSections, getSubdomain, translateAndSave } from '../services/api';
 import { clearAuthData } from '../services/auth';
 import {
@@ -42,8 +42,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
   const [translationProgress, setTranslationProgress] = useState({ current: 0, total: 0, sectionName: '' });
   const [showSettings, setShowSettings] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
-  // 日本語を編集済みだが未翻訳のセクションを追跡
-  const [untranslatedSections, setUntranslatedSections] = useState<Set<string>>(new Set());
 
   const sections = [
     { id: 'settings', label: '基本設定/テーマ' },
@@ -77,18 +75,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
       alert('保存するにはログインが必要です');
       return;
     }
-    // 未翻訳セクションがある場合は確認ダイアログを表示
-    if (untranslatedSections.size > 0) {
-      const sectionLabels = [...untranslatedSections]
-        .map(id => sections.find(s => s.id === id)?.label || id)
-        .join('、');
-      const proceed = window.confirm(
-        `⚠️ 以下のセクションは日本語を変更しましたが、まだ翻訳されていません：\n\n${sectionLabels}\n\n` +
-        `このまま下書き保存すると、英語・韓国語・繁体字の翻訳が古い内容のまま残ります。\n\n` +
-        `保存を続けますか？\n（「多言語で確定」ボタンで翻訳してから保存することを推奨します）`
-      );
-      if (!proceed) return;
-    }
     setIsSaving(true);
     const success = await saveAllSections(userId, sectionData, 'Draft');
     setIsSaving(false);
@@ -105,18 +91,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     if (!userId) {
       alert('公開するにはログインが必要です');
       return;
-    }
-    // 未翻訳セクションがある場合は確認ダイアログ
-    if (untranslatedSections.size > 0) {
-      const sectionLabels = [...untranslatedSections]
-        .map(id => sections.find(s => s.id === id)?.label || id)
-        .join('、');
-      const proceed = window.confirm(
-        `⚠️ 以下のセクションは日本語を変更しましたが、まだ翻訳されていません：\n\n${sectionLabels}\n\n` +
-        `このまま公開すると、外国語ページに古い翻訳が表示されます。\n\n` +
-        `公開を続けますか？\n（「多言語で確定」ボタンで翻訳してから公開することを強く推奨します）`
-      );
-      if (!proceed) return;
     }
     setIsPublishing(true);
     // Lambda側でCloudflare Webhookも自動でトリガーされる
@@ -145,8 +119,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
 
     setIsTranslating(false);
     if (success) {
-      // 翻訳完了後、未翻訳フラグをリセット
-      setUntranslatedSections(new Set());
       alert('翻訳と保存が完了しました');
       const subdomain = await getSubdomain(userId);
       if (subdomain && onSubdomainFetched) {
@@ -167,14 +139,9 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
     setShowSettings(false);
   };
 
-  // セクションデータを更新し、未翻訳フラグを立てる
-  const updateSectionData = useCallback((updates: any) => {
+  const updateSectionData = (updates: any) => {
     onSectionChange(activeSection, { ...sectionData[activeSection], ...updates });
-    // settingsセクションは翻訳不要なので除外
-    if (activeSection !== 'settings') {
-      setUntranslatedSections(prev => new Set([...prev, activeSection]));
-    }
-  }, [activeSection, sectionData, onSectionChange]);
+  };
 
   const renderEditor = () => {
     const data = sectionData[activeSection];
@@ -235,18 +202,6 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
           ✓ ログインに成功しました！編集内容を保存できます。
         </div>
       )}
-
-      {/* 未翻訳警告バナー */}
-      {untranslatedSections.size > 0 && isAuthenticated && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
-          <AlertTriangle size={15} className="text-amber-500 flex-shrink-0" />
-          <p className="text-amber-800 text-xs font-medium">
-            日本語を編集しました。保存前に <strong>「多言語で確定」</strong> を押して翻訳を更新することを推奨します。
-            <span className="ml-1 text-amber-500">（{untranslatedSections.size}件のセクションが未翻訳）</span>
-          </p>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-b border-gray-200 gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">エディター</h2>
@@ -271,34 +226,25 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
               ログイン
             </a>
           )}
-
+          
           {isAuthenticating && (
             <div className="w-full sm:w-64 px-5 py-2.5 h-10 text-sm font-medium text-gray-500 flex items-center justify-center gap-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-700"></div>
               認証中...
             </div>
           )}
-
+          
           {isAuthenticated && (
             <div className="grid grid-cols-2 gap-2 w-full sm:w-[340px]">
-              {/* 下書き保存 — 未翻訳がある場合は琥珀色に */}
               <button
                 onClick={handleSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className={`w-full h-10 bg-white border rounded-lg disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 ${
-                  untranslatedSections.size > 0
-                    ? 'text-amber-700 border-amber-300 hover:bg-amber-50'
-                    : 'text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                className="w-full h-10 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
               >
-                <Save size={16} className={isSaving ? 'animate-pulse text-indigo-500' : untranslatedSections.size > 0 ? 'text-amber-500' : 'text-gray-500'} />
+                <Save size={16} className={isSaving ? 'animate-pulse text-indigo-500' : 'text-gray-500'} />
                 {isSaving ? '保存中...' : '下書き保存'}
-                {untranslatedSections.size > 0 && !isSaving && (
-                  <span className="ml-1 bg-amber-400 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">!</span>
-                )}
               </button>
 
-              {/* 公開 */}
               <button
                 onClick={handlePublish}
                 disabled={isSaving || isPublishing || isTranslating}
@@ -308,21 +254,15 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
                 {isPublishing ? '処理中...' : '公開 (Publish)'}
               </button>
 
-              {/* 多言語で確定 — 未翻訳がある場合は強調表示 */}
               <button
                 onClick={handleTranslateAndSave}
                 disabled={isSaving || isPublishing || isTranslating}
-                className={`w-full h-10 rounded-lg disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
-                  untranslatedSections.size > 0
-                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white ring-2 ring-violet-400 ring-offset-1 hover:from-violet-700 hover:to-indigo-700'
-                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700'
-                }`}
+                className="w-full h-10 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
               >
                 <Languages size={16} className={isTranslating ? 'animate-pulse' : ''} />
-                {isTranslating ? '翻訳中...' : untranslatedSections.size > 0 ? `多言語で確定 (${untranslatedSections.size})` : '多言語で確定'}
+                多言語で確定
               </button>
 
-              {/* ログアウト */}
               <button
                 onClick={handleLogout}
                 className="w-full h-10 bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-lg flex items-center justify-center gap-1.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200"
@@ -357,22 +297,18 @@ export default function Editor({ userId, sectionData, onSectionChange, isAuthent
         </div>
       )}
 
-      {/* セクションタブ — 編集済みセクションに琥珀色のドットを表示 */}
       <div className="flex border-b border-gray-200 overflow-x-auto">
         {sections.map((section) => (
           <button
             key={section.id}
             onClick={() => setActiveSection(section.id)}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
               activeSection === section.id
                 ? 'border-b-2 border-blue-600 text-blue-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             {section.label}
-            {untranslatedSections.has(section.id) && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full" />
-            )}
           </button>
         ))}
       </div>

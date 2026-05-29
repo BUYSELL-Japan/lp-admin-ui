@@ -61,60 +61,43 @@ export async function saveSiteData(userId: string, data: Partial<SiteData>): Pro
 }
 
 async function getRawSectionData(storeId: string): Promise<any | null> {
-  const fetchOnce = async (): Promise<any | null> => {
-    try {
-      const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      // 404 = 新規店舗（データなし）→ null を返してOK
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
-      let contentData = null;
+  try {
+    const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    let contentData = null;
 
-      if (result.ContentData) {
-        contentData = result.ContentData;
-        if (contentData.Status) delete contentData.Status;
-      } else if (result.content) {
-        contentData = result.content;
-      } else if (result.Content) {
-        contentData = result.Content;
-      } else if (result.hero || result.about || result.menu) {
-        contentData = result;
-      }
-      if (!contentData) return null;
-
-      const normalizedData: any = {};
-      for (const sectionKey in contentData) {
-        const section = contentData[sectionKey];
-        if (!section || typeof section !== 'object') continue;
-        let extractedData = null;
-        if (section.translatedData && typeof section.translatedData === 'object') {
-          extractedData = section.translatedData[sectionKey] ? section.translatedData[sectionKey] : section.translatedData;
-        } else {
-          extractedData = section;
-        }
-        normalizedData[sectionKey] = extractedData;
-      }
-      return normalizedData;
-    } catch (error) {
-      return 'FETCH_ERROR' as any; // エラーと「データなし」を区別するためのセンチネル値
+    if (result.ContentData) {
+      contentData = result.ContentData;
+      if (contentData.Status) delete contentData.Status;
+    } else if (result.content) {
+      contentData = result.content;
+    } else if (result.Content) {
+      contentData = result.Content;
+    } else if (result.hero || result.about || result.menu) {
+      contentData = result;
     }
-  };
+    if (!contentData) return null;
 
-  const first = await fetchOnce();
-  if (first !== 'FETCH_ERROR') return first; // 成功 or 404(新規店舗)
-
-  // 1回目が失敗 → 1秒後にリトライ
-  console.warn('[getRawSectionData] 1st attempt failed. Retrying in 1s...');
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const second = await fetchOnce();
-  if (second !== 'FETCH_ERROR') return second;
-
-  // 2回失敗 → 呼び出し元に異常を伝える専用エラーをthrow
-  console.error('[getRawSectionData] Both attempts failed. Aborting save to protect translation data.');
-  throw new Error('FETCH_FAILED');
+    const normalizedData: any = {};
+    for (const sectionKey in contentData) {
+      const section = contentData[sectionKey];
+      if (!section || typeof section !== 'object') continue;
+      let extractedData = null;
+      if (section.translatedData && typeof section.translatedData === 'object') {
+        extractedData = section.translatedData[sectionKey] ? section.translatedData[sectionKey] : section.translatedData;
+      } else {
+        extractedData = section;
+      }
+      normalizedData[sectionKey] = extractedData;
+    }
+    return normalizedData;
+  } catch (error) {
+    return null;
+  }
 }
 
 function mergeMultilingualData(newData: any, existingData: any): any {
@@ -211,20 +194,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
   try {
     console.log(`=== Saving all sections (Status: ${status}, with normalization) ===`);
 
-    // 既存データ取得（失敗時は FETCH_FAILED エラーがthrowされる）
-    // nullは「新規店舗・データなし」を意味する正常ケース
-    let rawExistingData: any = null;
-    try {
-      rawExistingData = await getRawSectionData(userId);
-    } catch (fetchError: any) {
-      if (fetchError?.message === 'FETCH_FAILED') {
-        // 翻訳データを保護するため保存を中断
-        alert('⚠️ 通信エラーが発生しました。\n保存を中止しました（翻訳データを保護するため）。\n\nインターネット接続を確認して、もう一度お試しください。');
-        return false;
-      }
-      throw fetchError;
-    }
-
+    const rawExistingData = await getRawSectionData(userId);
     const normalizedContent: any = {};
 
     for (const sectionName in allSectionData) {
@@ -268,9 +238,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
     return true;
   } catch (error) {
     console.error('Error saving all sections data:', error);
-    if (error instanceof Error && error.message !== 'FETCH_FAILED') {
-      alert('データの保存に失敗しました: ' + error.message);
-    }
+    alert('データの保存に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
     return false;
   }
 }
