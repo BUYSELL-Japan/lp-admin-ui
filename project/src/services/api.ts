@@ -774,16 +774,50 @@ function normalizeDataStructure(data: any, sectionName: string): any {
   return normalized;
 }
 
+const renameKeysForTranslation = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(renameKeysForTranslation);
+  const newObj: any = {};
+  for (const key in obj) {
+    if (['spaces', 'hours', 'closedDay', 'price', 'copyright'].includes(key)) {
+      newObj[`${key}_text`] = renameKeysForTranslation(obj[key]);
+    } else {
+      newObj[key] = renameKeysForTranslation(obj[key]);
+    }
+  }
+  return newObj;
+};
+
+const restoreKeysAfterTranslation = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(restoreKeysAfterTranslation);
+  const newObj: any = {};
+  for (const key in obj) {
+    if (['spaces_text', 'hours_text', 'closedDay_text', 'price_text', 'copyright_text'].includes(key)) {
+      const originalKey = key.replace('_text', '');
+      newObj[originalKey] = restoreKeysAfterTranslation(obj[key]);
+    } else {
+      newObj[key] = restoreKeysAfterTranslation(obj[key]);
+    }
+  }
+  return newObj;
+};
+
 async function translateItem(
   userId: string,
   itemId: string,
   itemContent: any,
   retryCount: number = 0
 ): Promise<any> {
+  let contentToTranslate = itemContent;
+  if (typeof contentToTranslate === 'object') {
+    contentToTranslate = renameKeysForTranslation(contentToTranslate);
+  }
+
   const translatePayload = {
     storeId: userId,
     section: itemId,
-    content: itemContent,
+    content: contentToTranslate,
     targetLanguages: ['en', 'zh', 'ko']
   };
 
@@ -876,6 +910,10 @@ async function translateItem(
       }
     }
 
+    if (typeof extractedContent === 'object') {
+      extractedContent = restoreKeysAfterTranslation(extractedContent);
+    }
+
     console.log(`  ✓ Successfully extracted content for ${itemId}`);
     return extractedContent;
   } catch (error) {
@@ -896,10 +934,15 @@ async function translateSection(
   sectionContent: any,
   retryCount: number = 0
 ): Promise<any> {
+  let contentToTranslate = sectionContent;
+  if (typeof contentToTranslate === 'object') {
+    contentToTranslate = renameKeysForTranslation(contentToTranslate);
+  }
+
   const translatePayload = {
     storeId: userId,
     section: sectionName,
-    content: { [sectionName]: sectionContent },
+    content: { [sectionName]: contentToTranslate },
     targetLanguages: ['en', 'zh', 'ko']
   };
 
@@ -987,9 +1030,15 @@ async function translateSection(
         }
       }
 
+      if (typeof extractedContent === 'object') {
+        extractedContent = restoreKeysAfterTranslation(extractedContent);
+      }
       return extractedContent;
     } else if (extractedContent) {
       console.warn(`  ⚠ Response missing section wrapper, wrapping as { ${sectionName}: {...} }`);
+      if (typeof extractedContent === 'object') {
+        extractedContent = restoreKeysAfterTranslation(extractedContent);
+      }
       return { [sectionName]: extractedContent };
     }
 
