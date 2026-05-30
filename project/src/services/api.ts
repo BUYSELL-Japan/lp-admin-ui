@@ -1600,8 +1600,8 @@ async function translateSectionInBatches(
     return translateGallerySection(userId, sectionContent);
   }
 
-  let BATCH_SIZE = 4;
-  const BATCH_DELAY_MS = 5000;
+  let BATCH_SIZE = 1;
+  const BATCH_DELAY_MS = 3000; // 短縮
 
   const arrayFields = findArrayFields(sectionContent);
 
