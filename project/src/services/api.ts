@@ -1758,7 +1758,8 @@ export async function translateAndSave(
       const sectionName = sections[i];
       console.log(`\n[${i + 1}/${sections.length}] Processing section: ${sectionName}`);
 
-      const sectionContent = allSectionData[sectionName];
+      // 翻訳前に日本語データのみを抽出し、肥大化した多言語データが再度翻訳APIに送信されるのを防ぐ
+      const sectionContent = extractJapanese(allSectionData[sectionName]);
 
       const sectionTranslatedData = await translateSectionInBatches(userId, sectionName, sectionContent);
 
