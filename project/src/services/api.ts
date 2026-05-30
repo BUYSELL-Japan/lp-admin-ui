@@ -1773,12 +1773,25 @@ export async function translateAndSave(
     const rawExistingData = await getRawSectionData(userId) || {};
 
     // ★ mergedContentのベースとして、編集前の完全な多言語データ（DynamoDBのデータ）を使用する
-    for (const sectionName of VALID_SECTIONS) {
-      if (rawExistingData[sectionName]) {
-        mergedContent[sectionName] = JSON.parse(JSON.stringify(rawExistingData[sectionName]));
-      } else if (allSectionData[sectionName]) {
-        // DBに未保存の新規セクションの場合のみ、Reactのステートを使用する
-        mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+    // VALID_SECTIONS以外のデータ（例：settingsなど）も保持するために、全てのキーを処理する
+    const allKeys = new Set([...Object.keys(rawExistingData), ...Object.keys(allSectionData)]);
+
+    for (const sectionName of allKeys) {
+      if (VALID_SECTIONS.includes(sectionName)) {
+        if (rawExistingData[sectionName]) {
+          // 翻訳対象のセクションは、他言語データを保護するためにDynamoDBのデータをベースにする
+          mergedContent[sectionName] = JSON.parse(JSON.stringify(rawExistingData[sectionName]));
+        } else if (allSectionData[sectionName]) {
+          // DBに未保存の新規セクションの場合のみ、Reactのステートを使用する
+          mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+        }
+      } else {
+        // VALID_SECTIONS外（settings等）は多言語化対象外なので、常にUIの最新ステートを優先して保存する
+        if (allSectionData[sectionName]) {
+          mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+        } else if (rawExistingData[sectionName]) {
+          mergedContent[sectionName] = JSON.parse(JSON.stringify(rawExistingData[sectionName]));
+        }
       }
     }
 
