@@ -1768,10 +1768,18 @@ export async function translateAndSave(
     console.log('Valid sections:', sections.join(', '));
     console.log('All sections will be processed one by one to avoid API Gateway timeout');
 
-    // まずオリジナルの日本語データをベースにコピー（すべてのセクションを保持）
-    for (const sectionName in allSectionData) {
-      // 翻訳対象かどうかに関わらず、まずはすべてのオリジナルデータをコピー
-      mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+    // ★ 翻訳対象でないセクションの多言語データを保護するため、まずはDynamoDB上の最新の生データを取得する
+    // allSectionData はUI側で日本語化されているため、そのまま使うと他セクションの翻訳が消えてしまう
+    const rawExistingData = await getRawSectionData(userId) || {};
+
+    // ★ mergedContentのベースとして、編集前の完全な多言語データ（DynamoDBのデータ）を使用する
+    for (const sectionName of VALID_SECTIONS) {
+      if (rawExistingData[sectionName]) {
+        mergedContent[sectionName] = JSON.parse(JSON.stringify(rawExistingData[sectionName]));
+      } else if (allSectionData[sectionName]) {
+        // DBに未保存の新規セクションの場合のみ、Reactのステートを使用する
+        mergedContent[sectionName] = JSON.parse(JSON.stringify(allSectionData[sectionName]));
+      }
     }
 
     let completedCount = 0;
