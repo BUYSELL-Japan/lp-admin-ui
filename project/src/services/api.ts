@@ -788,19 +788,28 @@ async function translateItem(
   };
 
   try {
-    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(translatePayload),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒タイムアウト
+
+    let translateResponse: Response;
+    try {
+      translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(translatePayload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!translateResponse.ok) {
-      if (translateResponse.status === 504 && retryCount < 3) {
-        const waitTimes = [15000, 25000, 35000];
+      if (translateResponse.status === 504 && retryCount < 2) {
+        const waitTimes = [5000, 10000];
         const waitTime = waitTimes[retryCount];
-        console.warn(`504 timeout for ${itemId}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
+        console.warn(`504 timeout for ${itemId}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateItem(userId, itemId, itemContent, retryCount + 1);
       }
@@ -891,19 +900,28 @@ async function translateSection(
   };
 
   try {
-    const translateResponse = await fetch(TRANSLATE_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(translatePayload),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒タイムアウト
+
+    let translateResponse: Response;
+    try {
+      translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(translatePayload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!translateResponse.ok) {
-      if (translateResponse.status === 504 && retryCount < 3) {
-        const waitTimes = [15000, 25000, 35000];
+      if (translateResponse.status === 504 && retryCount < 2) {
+        const waitTimes = [5000, 10000];
         const waitTime = waitTimes[retryCount];
-        console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/3)...`);
+        console.warn(`504 timeout for ${sectionName}, retrying in ${waitTime}ms (attempt ${retryCount + 1}/2)...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return translateSection(userId, sectionName, sectionContent, retryCount + 1);
       }
