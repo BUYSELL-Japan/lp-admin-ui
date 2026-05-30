@@ -825,19 +825,22 @@ async function translateItem(
 
     let extractedContent: any = null;
 
+    // APIレスポンスがラッパー構造（メタデータを含む）かどうか判定
+    const isWrapper = response.storeId !== undefined || response.section !== undefined || response.targetLanguages !== undefined;
+
     // APIレスポンスの形式: { "sectionId": { "field": {...多言語...} } } の形式
     // まずitemIdをキーとするデータを探す
     if (response[itemId] && typeof response[itemId] === 'object') {
       console.log(`  ✓ Extracted content from response[${itemId}] for ${itemId}`);
       extractedContent = response[itemId];
     }
-    // 旧バージョン互換: response.content フィールドがある場合
-    else if (response.content && typeof response.content === 'object') {
-      console.log(`  ✓ Extracted content from response.content for ${itemId}`);
+    // 旧バージョン互換: メタデータを含むラッパー構造で、response.content フィールドがある場合
+    else if (isWrapper && response.content && typeof response.content === 'object') {
+      console.log(`  ✓ Extracted content from wrapper response.content for ${itemId}`);
       extractedContent = response.content[itemId] || response.content;
     }
-    // メタデータフィールド以外のキーをコンテンツとみなす
-    else if (response.storeId || response.section || response.targetLanguages) {
+    // メタデータフィールドを含むラッパー構造だが、その他のキーにコンテンツがある場合
+    else if (isWrapper) {
       console.log(`  API response contains metadata fields, extracting content for ${itemId}`);
       const contentOnly: any = {};
       for (const key in response) {
@@ -849,6 +852,7 @@ async function translateItem(
         extractedContent = contentOnly;
       }
     }
+    // ラッパーではなく、翻訳されたコンテンツ自体が返された場合（例: { icon, title, content } など）
     else {
       console.log(`  Using entire response for ${itemId}`);
       extractedContent = response;
