@@ -316,27 +316,24 @@ function App() {
                   console.log(`    Default keys:`, (merged as any)[key] ? Object.keys((merged as any)[key]).join(', ') : 'none');
 
                   if (key === 'storeInfo' && savedData[key].items && Array.isArray(savedData[key].items)) {
-                    const icons = ['MapPin', 'Clock', 'Phone', 'Mail'];
-                    const titles = ['所在地', '営業時間', '電話番号', 'メール'];
-
-                    const convertedItems = savedData[key].items.map((item: any, index: number) => {
+                    const convertedItems = savedData[key].items.map((item: any) => {
                       let content = '';
                       if (typeof item === 'string') {
                         content = item;
                       } else if (typeof item === 'object') {
-                        if (item.ja) {
+                        // content フィールドを最優先で取得
+                        if (typeof item.content === 'string') {
+                          content = item.content;
+                        } else if (item.content && typeof item.content === 'object') {
+                          content = item.content.ja || item.content.en || '';
+                        } else if (typeof item.ja === 'string') {
                           content = item.ja;
-                        } else if (item.content) {
-                          content = typeof item.content === 'string' ? item.content : item.content.ja || '';
-                        } else {
-                          const values = Object.values(item);
-                          content = values.length > 0 ? String(values[0]) : '';
                         }
                       }
 
                       return {
-                        icon: item.icon || icons[index] || 'MapPin',
-                        title: item.title || titles[index] || '',
+                        icon: item.icon || 'MapPin',   // 位置固定ではなく保存値を優先
+                        title: item.title || '',        // 位置固定の強制補完を削除
                         content: content
                       };
                     });
