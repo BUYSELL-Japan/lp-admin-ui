@@ -1875,18 +1875,10 @@ export async function translateAndSave(
         console.log(`  DEBUG: Section data sample:`, JSON.stringify(actualData[sectionName], null, 2).substring(0, 800));
         mergedContent[sectionName] = actualData[sectionName];
       }
-      // actualData が複数セクションを含む場合（バッチ処理の結果など）
+      // actualData 自体がセクションの中身の場合
       else {
-        console.log(`  Processing multiple sections from response`);
-        for (const secName in actualData) {
-          // 有効なセクション名のみ処理
-          if (!VALID_SECTIONS.includes(secName)) {
-            console.log(`  Skipping invalid key: ${secName}`);
-            continue;
-          }
-          console.log(`  DEBUG: Merging section ${secName}, data sample:`, JSON.stringify(actualData[secName], null, 2).substring(0, 400));
-          mergedContent[secName] = actualData[secName];
-        }
+        console.log(`  Assigning actualData directly to section ${sectionName}`);
+        mergedContent[sectionName] = actualData;
       }
 
       completedCount++;
