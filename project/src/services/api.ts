@@ -1793,6 +1793,71 @@ async function translateSectionInBatches(
   return mergedResult;
 }
 
+// ============================================================================
+// 未翻訳フィールド検知（ログ出力のみ）
+// ------------------------------------------------------------------------
+// 翻訳処理そのもの（リトライ・再翻訳・データの書き換え）には一切関与しない。
+// 翻訳完了後の最終データを走査し、対象言語が欠落している/日本語のままになって
+// いるフィールドを見つけたら console.warn に記録するだけの診断用ユーティリティ。
+// どの程度の頻度で部分翻訳漏れが起きているかを可視化する目的でのみ使用する。
+// ============================================================================
+interface TranslationGapIssue {
+  section: string;
+  path: string;
+  ja: string;
+  missingLanguages: string[];
+  unchangedLanguages: string[];
+}
+
+const TRANSLATION_TARGET_LANGUAGES = ['en', 'ko', 'zh-tw'];
+
+function detectUntranslatedFields(
+  content: any,
+  sectionName: string,
+  path: string = '',
+  issues: TranslationGapIssue[] = []
+): TranslationGapIssue[] {
+  if (!content || typeof content !== 'object') return issues;
+
+  if (Array.isArray(content)) {
+    content.forEach((item, index) => detectUntranslatedFields(item, sectionName, `${path}[${index}]`, issues));
+    return issues;
+  }
+
+  const keys = Object.keys(content);
+
+  if (typeof content.ja === 'string' && content.ja.trim() !== '') {
+    const missingLanguages = TRANSLATION_TARGET_LANGUAGES.filter((lang) => {
+      const value = content[lang];
+      return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+    });
+    const unchangedLanguages = TRANSLATION_TARGET_LANGUAGES.filter((lang) => {
+      const value = content[lang];
+      return typeof value === 'string' && value.trim() !== '' && value === content.ja;
+    });
+
+    if (missingLanguages.length > 0 || unchangedLanguages.length > 0) {
+      issues.push({
+        section: sectionName,
+        path: path || '(root)',
+        ja: content.ja.substring(0, 60),
+        missingLanguages,
+        unchangedLanguages,
+      });
+    }
+  }
+
+  for (const key of keys) {
+    if (key === 'ja' || TRANSLATION_TARGET_LANGUAGES.includes(key)) continue; // 多言語フィールド自体は上で判定済み
+    const value = content[key];
+    if (value && typeof value === 'object') {
+      detectUntranslatedFields(value, sectionName, path ? `${path}.${key}` : key, issues);
+    }
+  }
+
+  return issues;
+}
+
 export async function translateAndSave(
   userId: string,
   allSectionData: any,
@@ -1845,6 +1910,7 @@ export async function translateAndSave(
     }
 
     let completedCount = 0;
+    const translationGapIssues: TranslationGapIssue[] = [];
 
     for (let i = 0; i < sections.length; i++) {
       const sectionName = sections[i];
@@ -1881,6 +1947,20 @@ export async function translateAndSave(
         mergedContent[sectionName] = actualData;
       }
 
+      // ★ 未翻訳フィールドの検知（ログ出力のみ。検知しても再翻訳や保存の中断は一切行わない）
+      try {
+        const sectionIssues = detectUntranslatedFields(mergedContent[sectionName], sectionName);
+        if (sectionIssues.length > 0) {
+          console.warn(
+            `[TranslationGapDetector] Section "${sectionName}": ${sectionIssues.length}件のフィールドで翻訳漏れの疑いを検知しました（診断ログのみ、自動修正なし）`,
+            sectionIssues
+          );
+          translationGapIssues.push(...sectionIssues);
+        }
+      } catch (detectionError) {
+        console.error('[TranslationGapDetector] 検知処理自体でエラーが発生しました（翻訳結果には影響しません）:', detectionError);
+      }
+
       completedCount++;
       if (onProgress) {
         onProgress(completedCount, sections.length, sectionName);
@@ -1896,6 +1976,18 @@ export async function translateAndSave(
 
     console.log('\nAll sections translated successfully');
     console.log('Merged content structure:', Object.keys(mergedContent).join(', '));
+
+    // ★ 未翻訳フィールド検知のサマリー（頻度の可視化用。ログのみ、保存処理には一切影響しない）
+    if (translationGapIssues.length > 0) {
+      console.warn(
+        `[TranslationGapDetector] SUMMARY: ストア"${userId}"の翻訳処理で ${sections.length}セクション中、` +
+        `合計 ${translationGapIssues.length}件のフィールドで翻訳漏れの疑いを検知しました。` +
+        `（自動リトライ・自動修正は行っていません。このログは頻度把握のための診断情報です）`,
+        translationGapIssues
+      );
+    } else {
+      console.log(`[TranslationGapDetector] 翻訳漏れの疑いは検知されませんでした（${sections.length}セクション処理済み）`);
+    }
 
     // デバッグ：各セクションのデータ量を確認
     for (const sectionName of Object.keys(mergedContent)) {
