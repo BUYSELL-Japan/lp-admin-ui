@@ -1,3 +1,5 @@
+import { authFetch } from './auth';
+
 export interface SiteData {
   userId: string;
   header: any;
@@ -62,7 +64,7 @@ export async function saveSiteData(userId: string, data: Partial<SiteData>): Pro
 
 async function getRawSectionData(storeId: string): Promise<any | null> {
   try {
-    const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
+    const response = await authFetch(`${CONTENT_ENDPOINT}/${storeId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -164,7 +166,7 @@ export async function saveSection(userId: string, section: string, data: any): P
       content: normalizedData,
     };
 
-    const response = await fetch(API_ENDPOINT, {
+    const response = await authFetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -219,7 +221,7 @@ export async function saveAllSections(userId: string, allSectionData: any, statu
       Status: status   // 大文字に統一（LambdaはStatusキーを読む）
     };
 
-    const response = await fetch(API_ENDPOINT, {
+    const response = await authFetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -349,7 +351,7 @@ function extractJapanese(obj: any): any {
 
 export async function getSectionData(storeId: string): Promise<any | null> {
   try {
-    const response = await fetch(`${CONTENT_ENDPOINT}/${storeId}`, {
+    const response = await authFetch(`${CONTENT_ENDPOINT}/${storeId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -2094,7 +2096,7 @@ export async function translateAndSave(
     const payloadString = JSON.stringify(savePayload);
     console.log(`Payload size: ${payloadString.length} characters`);
 
-    const saveResponse = await fetch(API_ENDPOINT, {
+    const saveResponse = await authFetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2141,7 +2143,7 @@ export async function saveAllSectionsNormalized(userId: string, allSectionData: 
 
     console.log('Normalized sections:', Object.keys(normalizedContent).join(', '));
 
-    const response = await fetch(API_ENDPOINT, {
+    const response = await authFetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -108,6 +108,101 @@ export function isAuthenticated(): boolean {
   return !!localStorage.getItem('id_token');
 }
 
+// ============================================================
+// API呼び出し用のトークン管理
+// IDトークンの有効期限は30分のため、期限切れ前にリフレッシュトークンで更新する
+// ============================================================
+
+const TOKEN_REFRESH_MARGIN_SEC = 120;
+let refreshPromise: Promise<string | null> | null = null;
+
+function isTokenFresh(idToken: string): boolean {
+  try {
+    const { exp } = decodeJWT(idToken);
+    return typeof exp === 'number' && exp - Date.now() / 1000 > TOKEN_REFRESH_MARGIN_SEC;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshIdToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) return null;
+
+  const params = new URLSearchParams({
+    grant_type: 'refresh_token',
+    client_id: CLIENT_ID,
+    refresh_token: refreshToken,
+  });
+
+  try {
+    const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+    if (!response.ok) {
+      console.warn('Token refresh failed:', response.status);
+      return null;
+    }
+    const tokens: Partial<TokenResponse> = await response.json();
+    if (!tokens.id_token) return null;
+    localStorage.setItem('id_token', tokens.id_token);
+    if (tokens.access_token) localStorage.setItem('access_token', tokens.access_token);
+    return tokens.id_token;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return null;
+  }
+}
+
+/**
+ * 有効なIDトークンを返す（期限切れ間近ならリフレッシュする）
+ */
+export async function getValidIdToken(forceRefresh = false): Promise<string | null> {
+  const idToken = localStorage.getItem('id_token');
+  if (!forceRefresh && idToken && isTokenFresh(idToken)) return idToken;
+
+  if (!refreshPromise) {
+    refreshPromise = refreshIdToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  clearAuthData();
+  window.location.href = `${COGNITO_DOMAIN}/login?client_id=${CLIENT_ID}&response_type=code&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+}
+
+/**
+ * Authorizationヘッダー（Cognito IDトークン）を付けて fetch する。
+ * 401 の場合はトークンを更新して1回だけ再試行し、それでも 401 ならログイン画面へ戻す。
+ */
+export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const withToken = (token: string | null): RequestInit => ({
+    ...init,
+    headers: {
+      ...(init.headers as Record<string, string> | undefined),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  let response = await fetch(url, withToken(await getValidIdToken()));
+  if (response.status !== 401) return response;
+
+  const refreshed = await getValidIdToken(true);
+  if (refreshed) {
+    response = await fetch(url, withToken(refreshed));
+    if (response.status !== 401) return response;
+  }
+
+  alert('ログインの有効期限が切れました。再度ログインしてください。');
+  redirectToLogin();
+  return response;
+}
+
 export function getUserEmail(): string | null {
   const idToken = localStorage.getItem('id_token');
   if (!idToken) return null;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Settings, CreditCard, ExternalLink, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { authFetch } from '../services/auth';
 
 interface DashboardProps {
   storeId: string;
@@ -30,7 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       // TODO: Replace with the actual endpoint for creating a portal session
       const PORTAL_API_URL = 'https://1p5i8eve1i.execute-api.ap-southeast-2.amazonaws.com/prod/create-portal-session';
       
-      const response = await fetch(PORTAL_API_URL, {
+      const response = await authFetch(PORTAL_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
