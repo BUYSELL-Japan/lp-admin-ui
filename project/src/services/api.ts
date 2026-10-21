@@ -829,7 +829,7 @@ async function translateItem(
 
     let translateResponse: Response;
     try {
-      translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+      translateResponse = await authFetch(TRANSLATE_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -954,7 +954,7 @@ async function translateSection(
 
     let translateResponse: Response;
     try {
-      translateResponse = await fetch(TRANSLATE_ENDPOINT, {
+      translateResponse = await authFetch(TRANSLATE_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

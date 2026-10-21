@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import { authFetch } from '../services/auth';
 
 interface ImageUploadProps {
   value: string;
@@ -59,7 +60,7 @@ export default function ImageUpload({ value, onChange, label, storeId }: ImageUp
 
       const uploadEndpoint = 'https://2sznhxhcd8.execute-api.ap-southeast-2.amazonaws.com/dev/lp/assets/upload-url';
 
-      const response = await fetch(uploadEndpoint, {
+      const response = await authFetch(uploadEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
