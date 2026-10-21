@@ -1,6 +1,7 @@
 import React from 'react';
 import { Settings, CreditCard, ExternalLink, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { authFetch } from '../services/auth';
+import { THEMES, getThemeName } from '../data/themes';
 
 interface DashboardProps {
   storeId: string;
@@ -151,37 +152,44 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* テンプレート */}
         <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8">テンプレート</h2>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <p className="text-sm text-gray-600 mb-5">公開LPのデザインテンプレートを変更します。変更後は次回ビルド時に反映されます。</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { id: 'theme1', name: 'Standard', color: '#0d9488', desc: '清潔感・万能' },
-              { id: 'theme2', name: 'Modern', color: '#3b82f6', desc: 'ダーク・高級感' },
-              { id: 'theme3', name: 'Elegant', color: '#b45309', desc: '和風・エレガント' },
-              { id: 'theme4', name: 'Pop', color: '#ef4444', desc: 'ポップ・親しみ' },
-            ].map(t => (
-              <button
+          <p className="text-sm text-gray-600 mb-5">公開LPのデザインテンプレートを変更します。公開中のLPには数分で反映されます。</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            {THEMES.map(t => (
+              <div
                 key={t.id}
-                onClick={() => onTemplateChange && onTemplateChange(t.id)}
-                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-left ${
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   templateId === t.id
                     ? 'border-blue-500 bg-blue-50 shadow-md'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                {templateId === t.id && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6 9 17l-5-5"/></svg>
-                  </span>
-                )}
-                <div className="w-10 h-10 rounded-full" style={{ background: t.color }} />
-                <span className="font-bold text-sm text-gray-800">{t.name}</span>
-                <span className="text-xs text-gray-500">{t.desc}</span>
-              </button>
+                <button
+                  onClick={() => onTemplateChange && onTemplateChange(t.id)}
+                  className="flex flex-col items-center gap-2 w-full"
+                >
+                  {templateId === t.id && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6 9 17l-5-5"/></svg>
+                    </span>
+                  )}
+                  <div className="w-10 h-10 rounded-full" style={{ background: t.color }} />
+                  <span className="font-bold text-sm text-gray-800">{t.name}</span>
+                  <span className="text-xs text-gray-500 text-center">{t.desc}</span>
+                </button>
+                <a
+                  href={t.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  デモ <ExternalLink size={10} />
+                </a>
+              </div>
             ))}
           </div>
           {templateId && (
             <p className="mt-4 text-xs text-gray-400 text-center">
-              現在選択中: <strong className="text-gray-700">{templateId === 'theme1' ? 'Standard' : templateId === 'theme2' ? 'Modern' : templateId === 'theme3' ? 'Elegant' : 'Pop'}</strong>
+              現在選択中: <strong className="text-gray-700">{getThemeName(templateId)}</strong>
             </p>
           )}
         </div>

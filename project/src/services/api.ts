@@ -289,7 +289,7 @@ export async function getStoreInfo(storeId: string): Promise<{ subdomain: string
 
 export async function saveTemplateId(storeId: string, templateId: string): Promise<boolean> {
   try {
-    const response = await fetch(SETTINGS_ENDPOINT, {
+    const response = await authFetch(SETTINGS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, templateId }),

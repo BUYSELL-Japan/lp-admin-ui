@@ -507,7 +507,11 @@ function App() {
                   onTemplateChange={async (newTheme: string) => {
                     if (userId) {
                       const ok = await saveTemplateId(userId, newTheme);
-                      if (ok) setTemplateId(newTheme);
+                      if (ok) {
+                        setTemplateId(newTheme);
+                      } else {
+                        window.alert('テンプレートの変更に失敗しました。時間をおいて再度お試しください。');
+                      }
                     }
                   }}
                   onOpenEditor={handleEditorToggle}
